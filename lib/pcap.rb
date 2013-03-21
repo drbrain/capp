@@ -7,7 +7,7 @@ class Pcap
   end
 
   Address = Struct.new :address, :netmask, :broadcast, :destination
-  Device  = Struct.new :name, :description, :addresses, :loopback
+  Device  = Struct.new :name, :description, :addresses, :flags
 
 end
 

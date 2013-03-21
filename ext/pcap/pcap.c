@@ -41,6 +41,25 @@ rb_pcap_s_create(VALUE klass, VALUE device)
 }
 
 static VALUE
+rb_pcap_s_default_device_name(VALUE klass)
+{
+    char errbuf[PCAP_ERRBUF_SIZE];
+    char *device;
+
+    *errbuf = '\0';
+
+    device = pcap_lookupdev(errbuf);
+
+    if (device == NULL)
+	rb_raise(ePcapError, "pcap_create: %s", errbuf);
+
+    if (*errbuf)
+	rb_warn("%s", errbuf);
+
+    return rb_usascii_str_new_cstr(device);
+}
+
+static VALUE
 rb_pcap_sockaddr_to_address(struct sockaddr *addr)
 {
     VALUE address, sockaddr_string;
@@ -107,18 +126,14 @@ rb_pcap_s_devices(VALUE klass)
     devices = rb_ary_new();
 
     for (pcap_if_t *iface = ifaces; iface; iface = iface->next) {
-	dev_args[0] = rb_str_new_cstr(iface->name);
+	dev_args[0] = rb_usascii_str_new_cstr(iface->name);
 	if (iface->description) {
-	    dev_args[1] = rb_str_new_cstr(iface->description);
+	    dev_args[1] = rb_usascii_str_new_cstr(iface->description);
 	} else {
 	    dev_args[1] = Qnil;
 	}
 	dev_args[2] = rb_pcap_addr_to_addresses(iface->addresses);
-	if (iface->flags & PCAP_IF_LOOPBACK) {
-	    dev_args[3] = Qtrue;
-	} else {
-	    dev_args[3] = Qfalse;
-	}
+	dev_args[3] = UINT2NUM(iface->flags);
 
 	device = rb_class_new_instance(4, dev_args, cPcapAddress);
 
@@ -383,6 +398,7 @@ Init_pcap(void) {
     rb_undef_alloc_func(cPcap);
 
     rb_define_singleton_method(cPcap, "create", rb_pcap_s_create, 1);
+    rb_define_singleton_method(cPcap, "default_device_name", rb_pcap_s_default_device_name, 0);
     rb_define_singleton_method(cPcap, "devices", rb_pcap_s_devices, 0);
     rb_define_singleton_method(cPcap, "open_live", rb_pcap_s_open_live, 4);
 
