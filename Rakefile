@@ -25,4 +25,6 @@ Rake::ExtensionTask.new 'pcap', HOE.spec do |ext|
   ext.lib_dir = 'lib/pcap'
 end
 
+task test: :compile
+
 # vim: syntax=ruby

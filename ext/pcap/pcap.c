@@ -1,15 +1,20 @@
 #include <pcap/pcap.h>
+#include <sys/socket.h>
+#include <net/if_dl.h>
 #include <ruby.h>
 #include "extconf.h"
 
 #define GetPcap(obj, pcap) Data_Get_Struct(obj, pcap_t, pcap)
 #define GetFilter(obj, pcap) Data_Get_Struct(obj, struct bpf_program, pcap)
 
-static ID id_drop, id_ifdrop, id_recv;
+static ID id_drop, id_ifdrop, id_recv, id_unpack_sockaddr_in;
 
 static VALUE cPcap;
+static VALUE cPcapAddress;
+static VALUE cPcapDevice;
 static VALUE cPcapFilter;
 static VALUE cPcapPacket;
+static VALUE cSocket;
 
 static VALUE ePcapError;
 
@@ -33,6 +38,96 @@ rb_pcap_s_create(VALUE klass, VALUE device)
     obj = Data_Wrap_Struct(klass, NULL, pcap_close, handle);
 
     return obj;
+}
+
+static VALUE
+rb_pcap_sockaddr_to_address(struct sockaddr *addr)
+{
+    VALUE address, sockaddr_string;
+    struct sockaddr_dl *dl;
+
+    if (NULL == addr)
+	return Qnil;
+
+    sockaddr_string = rb_str_new((char *)addr, addr->sa_len);
+
+    switch (addr->sa_family) {
+    case AF_INET:
+    case AF_INET6:
+	address =
+	    rb_funcall(cSocket, id_unpack_sockaddr_in, 1, sockaddr_string);
+	return rb_ary_entry(address, 1);
+    case AF_LINK:
+	dl = (struct sockaddr_dl *)addr;
+
+	return rb_str_new(LLADDR(dl), dl->sdl_alen);
+    }
+
+    return sockaddr_string;
+}
+
+static VALUE
+rb_pcap_addr_to_addresses(pcap_addr_t *addrs)
+{
+    VALUE address, addresses, addr_args[4];
+
+    addresses = rb_ary_new();
+
+    if (addrs) {
+	for (pcap_addr_t *addr = addrs; addr; addr = addr->next) {
+	    addr_args[0] = rb_pcap_sockaddr_to_address(addr->addr);
+	    addr_args[1] = rb_pcap_sockaddr_to_address(addr->netmask);
+	    addr_args[2] = rb_pcap_sockaddr_to_address(addr->broadaddr);
+	    addr_args[3] = rb_pcap_sockaddr_to_address(addr->dstaddr);
+
+	    address = rb_class_new_instance(4, addr_args, cPcapAddress);
+
+	    rb_ary_push(addresses, address);
+	}
+    }
+
+    return addresses;
+}
+
+static VALUE
+rb_pcap_s_devices(VALUE klass)
+{
+    VALUE device, devices, dev_args[4];
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_if_t *ifaces;
+
+    *errbuf = '\0';
+
+    if (pcap_findalldevs(&ifaces, errbuf))
+	rb_raise(ePcapError, "pcap_create: %s", errbuf);
+
+    if (*errbuf)
+	rb_warn("%s", errbuf);
+
+    devices = rb_ary_new();
+
+    for (pcap_if_t *iface = ifaces; iface; iface = iface->next) {
+	dev_args[0] = rb_str_new_cstr(iface->name);
+	if (iface->description) {
+	    dev_args[1] = rb_str_new_cstr(iface->description);
+	} else {
+	    dev_args[1] = Qnil;
+	}
+	dev_args[2] = rb_pcap_addr_to_addresses(iface->addresses);
+	if (iface->flags & PCAP_IF_LOOPBACK) {
+	    dev_args[3] = Qtrue;
+	} else {
+	    dev_args[3] = Qfalse;
+	}
+
+	device = rb_class_new_instance(4, dev_args, cPcapAddress);
+
+	rb_ary_push(devices, device);
+    }
+
+    pcap_freealldevs(ifaces);
+
+    return devices;
 }
 
 static VALUE
@@ -275,14 +370,20 @@ Init_pcap(void) {
     id_drop   = rb_intern("drop");
     id_ifdrop = rb_intern("ifdrop");
     id_recv   = rb_intern("recv");
+    id_unpack_sockaddr_in = rb_intern("unpack_sockaddr_in");
 
-    cPcap       = rb_const_get(rb_cObject, rb_intern("Pcap"));
-    cPcapPacket = rb_const_get(cPcap, rb_intern("Packet"));
-    ePcapError  = rb_const_get(cPcap, rb_intern("Error"));
+    cPcap        = rb_const_get(rb_cObject, rb_intern("Pcap"));
+    cPcapAddress = rb_const_get(cPcap, rb_intern("Address"));
+    cPcapDevice  = rb_const_get(cPcap, rb_intern("Device"));
+    cPcapPacket  = rb_const_get(cPcap, rb_intern("Packet"));
+    ePcapError   = rb_const_get(cPcap, rb_intern("Error"));
+
+    cSocket = rb_const_get(rb_cObject, rb_intern("Socket"));
 
     rb_undef_alloc_func(cPcap);
 
     rb_define_singleton_method(cPcap, "create", rb_pcap_s_create, 1);
+    rb_define_singleton_method(cPcap, "devices", rb_pcap_s_devices, 0);
     rb_define_singleton_method(cPcap, "open_live", rb_pcap_s_open_live, 4);
 
     rb_define_method(cPcap, "activate", rb_pcap_activate, 0);
