@@ -1,0 +1,7 @@
+*.rbc
+*.swp
+/TAGS
+/doc
+/lib/pcap/pcap.bundle
+/pkg
+/tmp
