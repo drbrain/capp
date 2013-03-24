@@ -295,6 +295,7 @@ capp_loop_run(VALUE self)
 static VALUE
 capp_loop(VALUE self)
 {
+    RETURN_ENUMERATOR(self, 0, 0);
 
     rb_ensure(capp_loop_run, self, capp_loop_end, self);
 
