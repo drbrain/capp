@@ -132,17 +132,27 @@ capp_s_devices(VALUE klass)
 }
 
 static VALUE
-capp_s_open_live(VALUE klass, VALUE device, VALUE snaplen,
-	VALUE promiscuous, VALUE timeout)
+capp_s_open_live(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE obj;
+    VALUE obj, device, snaplen, promiscuous, timeout;
+    int promisc = 0;
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t *handle;
 
-    handle = pcap_open_live(StringValueCStr(device), NUM2INT(snaplen),
-	    NUM2INT(promiscuous), NUM2INT(timeout), errbuf);
+    rb_scan_args(argc, argv, "13", &device, &snaplen, &promiscuous, &timeout);
+
+    if (!RTEST(snaplen))     snaplen     = INT2NUM(-1);
+    if (!RTEST(promiscuous)) promiscuous = Qtrue;
+    if (!RTEST(timeout))     timeout     = INT2NUM(1000);
+
+    if (RTEST(promiscuous))
+	promisc = 1;
+
 
     *errbuf = '\0';
+
+    handle = pcap_open_live(StringValueCStr(device), NUM2INT(snaplen),
+	    promisc, NUM2INT(timeout), errbuf);
 
     if (NULL == handle)
 	rb_raise(eCappError, "pcap_create: %s", errbuf);
@@ -413,7 +423,7 @@ Init_capp(void) {
 
     rb_define_singleton_method(cCapp, "default_device_name", capp_s_default_device_name, 0);
     rb_define_singleton_method(cCapp, "devices", capp_s_devices, 0);
-    rb_define_singleton_method(cCapp, "open_live", capp_s_open_live, 4);
+    rb_define_singleton_method(cCapp, "live", capp_s_open_live, -1);
 
     rb_define_method(cCapp, "activate", capp_activate, 0);
     rb_define_method(cCapp, "filter=", capp_set_filter, 1);
