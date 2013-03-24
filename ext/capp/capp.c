@@ -257,28 +257,48 @@ capp_make_packet(const struct pcap_pkthdr *header, const u_char *data)
 
 static void
 capp_loop_callback(u_char *args, const struct pcap_pkthdr *header,
-	const u_char *data) {
-    VALUE self = (VALUE)args;
-
+	const u_char *data)
+{
     rb_yield(capp_make_packet(header, data));
 }
 
 static VALUE
-capp_loop(VALUE self, VALUE count)
+capp_loop_end(VALUE self)
+{
+    pcap_t *handle;
+
+    GetCapp(self, handle);
+
+    pcap_breakloop(handle);
+
+    return Qnil;
+}
+
+static VALUE
+capp_loop_run(VALUE self)
 {
     pcap_t *handle;
     int res;
 
     GetCapp(self, handle);
 
-    res = pcap_loop(handle, NUM2INT(count), capp_loop_callback,
-	    (u_char *)self);
+    for (;;) {
+	res = pcap_loop(handle, 0, capp_loop_callback, (u_char *)self);
 
-    if (res == -1) {
-	rb_raise(eCappError, "%s", pcap_geterr(handle));
+	if (res == -1)
+	    rb_raise(eCappError, "%s", pcap_geterr(handle));
     }
 
-    return INT2NUM(res);
+    return self;
+}
+
+static VALUE
+capp_loop(VALUE self)
+{
+
+    rb_ensure(capp_loop_run, self, capp_loop_end, self);
+
+    return self;
 }
 
 static VALUE
@@ -455,7 +475,7 @@ Init_capp(void) {
 
     rb_define_method(cCapp, "activate", capp_activate, 0);
     rb_define_method(cCapp, "filter=", capp_set_filter, 1);
-    rb_define_method(cCapp, "loop", capp_loop, 1);
+    rb_define_method(cCapp, "loop", capp_loop, 0);
     rb_define_method(cCapp, "next", capp_next, 0);
     rb_define_method(cCapp, "nonblock", capp_get_nonblock, 0);
     rb_define_method(cCapp, "nonblock=", capp_set_nonblock, 1);
