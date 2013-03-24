@@ -2,7 +2,13 @@
 #include <sys/socket.h>
 #include <net/if_dl.h>
 #include <ruby.h>
+#include <ruby/thread.h>
 #include "extconf.h"
+
+struct capp_packet {
+    const struct pcap_pkthdr *header;
+    const u_char *data;
+};
 
 #define GetCapp(obj, capp) Data_Get_Struct(obj, pcap_t, capp)
 
@@ -255,11 +261,26 @@ capp_make_packet(const struct pcap_pkthdr *header, const u_char *data)
     return rb_class_new_instance(4, args, cCappPacket);
 }
 
+static void *
+capp_loop_callback_with_gvl(void *ptr)
+{
+    struct capp_packet *packet = (struct capp_packet *)ptr;
+
+    rb_yield(capp_make_packet(packet->header, packet->data));
+
+    return NULL;
+}
+
 static void
 capp_loop_callback(u_char *args, const struct pcap_pkthdr *header,
 	const u_char *data)
 {
-    rb_yield(capp_make_packet(header, data));
+    struct capp_packet packet;
+
+    packet.header = header;
+    packet.data = data;
+
+    rb_thread_call_with_gvl(capp_loop_callback_with_gvl, (void *)&packet);
 }
 
 static VALUE
@@ -274,6 +295,30 @@ capp_loop_end(VALUE self)
     return Qnil;
 }
 
+static void
+capp_loop_interrupt(void *ptr)
+{
+    pcap_t *handle = (pcap_t *)ptr;
+
+    pcap_breakloop(handle);
+}
+
+static void *
+capp_loop_run_no_gvl(void *ptr)
+{
+    pcap_t *handle = (pcap_t *)ptr;
+    int res;
+
+    for (;;) {
+	res = pcap_loop(handle, 0, capp_loop_callback, NULL);
+
+	if (res != 0)
+	    break;
+    }
+
+    return (void *)res;
+}
+
 static VALUE
 capp_loop_run(VALUE self)
 {
@@ -282,12 +327,11 @@ capp_loop_run(VALUE self)
 
     GetCapp(self, handle);
 
-    for (;;) {
-	res = pcap_loop(handle, 0, capp_loop_callback, (u_char *)self);
+    res = (int)rb_thread_call_without_gvl(capp_loop_run_no_gvl,
+	    (void *)handle, capp_loop_interrupt, (void *)handle);
 
-	if (res == -1)
-	    rb_raise(eCappError, "%s", pcap_geterr(handle));
-    }
+    if (res == -1)
+	rb_raise(eCappError, "%s", pcap_geterr(handle));
 
     return self;
 }
