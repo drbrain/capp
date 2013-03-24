@@ -1,8 +1,8 @@
-= pcap
+= capp
 
-home :: https://github.com/drbrain/pcap
-rdoc :: http://docs.seattlerb.org/pcap
-bugs :: https://github.com/drbrain/pcap/issues
+home :: https://github.com/drbrain/capp
+rdoc :: http://docs.seattlerb.org/capp
+bugs :: https://github.com/drbrain/capp/issues
 
 == Description
 
@@ -22,7 +22,7 @@ FIX (describe your package)
 
 == Install
 
-  sudo gem install pcap
+  sudo gem install capp
 
 == Developers
 

@@ -1,6 +1,6 @@
 require 'socket'
 
-class Pcap
+class Capp
   VERSION = '1.0'
 
   class Error < RuntimeError
@@ -11,6 +11,6 @@ class Pcap
 
 end
 
-require 'pcap/packet'
-require 'pcap/pcap'
+require 'capp/packet'
+require 'capp/capp'
 

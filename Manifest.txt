@@ -3,5 +3,8 @@ History.rdoc
 Manifest.txt
 README.rdoc
 Rakefile
-lib/pcap.rb
-test/test_pcap.rb
+ext/capp/capp.c
+ext/capp/extconf.rb
+lib/capp.rb
+lib/capp/packet.rb
+test/test_capp_packet.rb

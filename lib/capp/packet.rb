@@ -1,6 +1,6 @@
 # coding: BINARY
 
-class Pcap::Packet
+class Capp::Packet
 
   EthernetHeader = Struct.new :destination, :source, :ether_type do
     def self.from_capture capture

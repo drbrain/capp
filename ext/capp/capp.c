@@ -4,22 +4,22 @@
 #include <ruby.h>
 #include "extconf.h"
 
-#define GetPcap(obj, pcap) Data_Get_Struct(obj, pcap_t, pcap)
-#define GetFilter(obj, pcap) Data_Get_Struct(obj, struct bpf_program, pcap)
+#define GetCapp(obj, capp) Data_Get_Struct(obj, pcap_t, capp)
+#define GetFilter(obj, capp) Data_Get_Struct(obj, struct bpf_program, capp)
 
 static ID id_drop, id_ifdrop, id_recv, id_unpack_sockaddr_in;
 
-static VALUE cPcap;
-static VALUE cPcapAddress;
-static VALUE cPcapDevice;
-static VALUE cPcapFilter;
-static VALUE cPcapPacket;
+static VALUE cCapp;
+static VALUE cCappAddress;
+static VALUE cCappDevice;
+static VALUE cCappFilter;
+static VALUE cCappPacket;
 static VALUE cSocket;
 
-static VALUE ePcapError;
+static VALUE eCappError;
 
 static VALUE
-rb_pcap_s_create(VALUE klass, VALUE device)
+capp_s_create(VALUE klass, VALUE device)
 {
     VALUE obj;
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -30,7 +30,7 @@ rb_pcap_s_create(VALUE klass, VALUE device)
     *errbuf = '\0';
 
     if (NULL == handle)
-	rb_raise(ePcapError, "pcap_create: %s", errbuf);
+	rb_raise(eCappError, "pcap_create: %s", errbuf);
 
     if (*errbuf)
 	rb_warn("%s", errbuf);
@@ -41,7 +41,7 @@ rb_pcap_s_create(VALUE klass, VALUE device)
 }
 
 static VALUE
-rb_pcap_s_default_device_name(VALUE klass)
+capp_s_default_device_name(VALUE klass)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
     char *device;
@@ -51,7 +51,7 @@ rb_pcap_s_default_device_name(VALUE klass)
     device = pcap_lookupdev(errbuf);
 
     if (device == NULL)
-	rb_raise(ePcapError, "pcap_create: %s", errbuf);
+	rb_raise(eCappError, "pcap_create: %s", errbuf);
 
     if (*errbuf)
 	rb_warn("%s", errbuf);
@@ -60,7 +60,7 @@ rb_pcap_s_default_device_name(VALUE klass)
 }
 
 static VALUE
-rb_pcap_sockaddr_to_address(struct sockaddr *addr)
+capp_sockaddr_to_address(struct sockaddr *addr)
 {
     VALUE address, sockaddr_string;
     struct sockaddr_dl *dl;
@@ -86,7 +86,7 @@ rb_pcap_sockaddr_to_address(struct sockaddr *addr)
 }
 
 static VALUE
-rb_pcap_addr_to_addresses(pcap_addr_t *addrs)
+capp_addr_to_addresses(pcap_addr_t *addrs)
 {
     VALUE address, addresses, addr_args[4];
 
@@ -94,12 +94,12 @@ rb_pcap_addr_to_addresses(pcap_addr_t *addrs)
 
     if (addrs) {
 	for (pcap_addr_t *addr = addrs; addr; addr = addr->next) {
-	    addr_args[0] = rb_pcap_sockaddr_to_address(addr->addr);
-	    addr_args[1] = rb_pcap_sockaddr_to_address(addr->netmask);
-	    addr_args[2] = rb_pcap_sockaddr_to_address(addr->broadaddr);
-	    addr_args[3] = rb_pcap_sockaddr_to_address(addr->dstaddr);
+	    addr_args[0] = capp_sockaddr_to_address(addr->addr);
+	    addr_args[1] = capp_sockaddr_to_address(addr->netmask);
+	    addr_args[2] = capp_sockaddr_to_address(addr->broadaddr);
+	    addr_args[3] = capp_sockaddr_to_address(addr->dstaddr);
 
-	    address = rb_class_new_instance(4, addr_args, cPcapAddress);
+	    address = rb_class_new_instance(4, addr_args, cCappAddress);
 
 	    rb_ary_push(addresses, address);
 	}
@@ -109,7 +109,7 @@ rb_pcap_addr_to_addresses(pcap_addr_t *addrs)
 }
 
 static VALUE
-rb_pcap_s_devices(VALUE klass)
+capp_s_devices(VALUE klass)
 {
     VALUE device, devices, dev_args[4];
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -118,7 +118,7 @@ rb_pcap_s_devices(VALUE klass)
     *errbuf = '\0';
 
     if (pcap_findalldevs(&ifaces, errbuf))
-	rb_raise(ePcapError, "pcap_create: %s", errbuf);
+	rb_raise(eCappError, "pcap_create: %s", errbuf);
 
     if (*errbuf)
 	rb_warn("%s", errbuf);
@@ -132,10 +132,10 @@ rb_pcap_s_devices(VALUE klass)
 	} else {
 	    dev_args[1] = Qnil;
 	}
-	dev_args[2] = rb_pcap_addr_to_addresses(iface->addresses);
+	dev_args[2] = capp_addr_to_addresses(iface->addresses);
 	dev_args[3] = UINT2NUM(iface->flags);
 
-	device = rb_class_new_instance(4, dev_args, cPcapAddress);
+	device = rb_class_new_instance(4, dev_args, cCappAddress);
 
 	rb_ary_push(devices, device);
     }
@@ -146,7 +146,7 @@ rb_pcap_s_devices(VALUE klass)
 }
 
 static VALUE
-rb_pcap_s_open_live(VALUE klass, VALUE device, VALUE snaplen,
+capp_s_open_live(VALUE klass, VALUE device, VALUE snaplen,
 	VALUE promiscuous, VALUE timeout)
 {
     VALUE obj;
@@ -159,7 +159,7 @@ rb_pcap_s_open_live(VALUE klass, VALUE device, VALUE snaplen,
     *errbuf = '\0';
 
     if (NULL == handle)
-	rb_raise(ePcapError, "pcap_create: %s", errbuf);
+	rb_raise(eCappError, "pcap_create: %s", errbuf);
 
     if (*errbuf)
 	rb_warn("%s", errbuf);
@@ -170,12 +170,12 @@ rb_pcap_s_open_live(VALUE klass, VALUE device, VALUE snaplen,
 }
 
 static VALUE
-rb_pcap_activate(VALUE self, VALUE snaplen)
+capp_activate(VALUE self, VALUE snaplen)
 {
     pcap_t *handle;
     int res;
 
-    GetPcap(self, handle);
+    GetCapp(self, handle);
 
     res = pcap_activate(handle);
 
@@ -194,25 +194,25 @@ rb_pcap_activate(VALUE self, VALUE snaplen)
 
 #ifdef HAVE_PCAP_ERROR_PROMISC_PERM_DENIED
       case PCAP_ERROR_PROMISC_PERM_DENIED:
-	rb_raise(ePcapError, "promiscuous permission denied");
+	rb_raise(eCappError, "promiscuous permission denied");
 #endif
       case PCAP_ERROR_ACTIVATED:
-	rb_raise(ePcapError, "pcap already activated");
+	rb_raise(eCappError, "pcap already activated");
       case PCAP_ERROR_RFMON_NOTSUP:
-	rb_raise(ePcapError, "RF monitoring not supported");
+	rb_raise(eCappError, "RF monitoring not supported");
       case PCAP_ERROR_IFACE_NOT_UP:
-	rb_raise(ePcapError, "interface not up");
+	rb_raise(eCappError, "interface not up");
       case PCAP_ERROR_PERM_DENIED:
       case PCAP_ERROR_NO_SUCH_DEVICE:
       case PCAP_ERROR:
-	rb_raise(ePcapError, "%s", pcap_geterr(handle));
+	rb_raise(eCappError, "%s", pcap_geterr(handle));
     }
 
     return snaplen;
 }
 
 static void
-rb_pcap_loop_callback(u_char *args, const struct pcap_pkthdr *header,
+capp_loop_callback(u_char *args, const struct pcap_pkthdr *header,
 	const u_char *packet) {
     VALUE self = (VALUE)args;
 
@@ -221,25 +221,25 @@ rb_pcap_loop_callback(u_char *args, const struct pcap_pkthdr *header,
 }
 
 static VALUE
-rb_pcap_loop(VALUE self, VALUE count)
+capp_loop(VALUE self, VALUE count)
 {
     pcap_t *handle;
     int res;
 
-    GetPcap(self, handle);
+    GetCapp(self, handle);
 
-    res = pcap_loop(handle, NUM2INT(count), rb_pcap_loop_callback,
+    res = pcap_loop(handle, NUM2INT(count), capp_loop_callback,
 	    (u_char *)self);
 
     if (res == -1) {
-	rb_raise(ePcapError, "%s", pcap_geterr(handle));
+	rb_raise(eCappError, "%s", pcap_geterr(handle));
     }
 
     return INT2NUM(res);
 }
 
 static VALUE
-rb_pcap_next(VALUE self)
+capp_next(VALUE self)
 {
     VALUE packet, args[4];
     pcap_t *handle;
@@ -247,89 +247,89 @@ rb_pcap_next(VALUE self)
     const u_char *data = NULL;
     int res;
 
-    GetPcap(self, handle);
+    GetCapp(self, handle);
 
     res = pcap_next_ex(handle, &header, &data);
 
     if (res == -1)
-	rb_raise(ePcapError, "%s", pcap_geterr(handle));
+	rb_raise(eCappError, "%s", pcap_geterr(handle));
 
     args[0] = rb_time_new(header->ts.tv_sec, header->ts.tv_usec);
     args[1] = UINT2NUM(header->len);
     args[2] = UINT2NUM(header->caplen);
     args[3] = rb_str_new((const char *)data, header->caplen);
 
-    packet = rb_class_new_instance(4, args, cPcapPacket);
+    packet = rb_class_new_instance(4, args, cCappPacket);
 
     return packet;
 }
 
 static VALUE
-rb_pcap_set_filter(VALUE self, VALUE filter)
+capp_set_filter(VALUE self, VALUE filter)
 {
     pcap_t *handle;
     struct bpf_program *program;
 
-    GetPcap(self, handle);
+    GetCapp(self, handle);
     GetFilter(filter, program);
 
     if (pcap_setfilter(handle, program))
-	rb_raise(ePcapError, "%s", pcap_geterr(handle));
+	rb_raise(eCappError, "%s", pcap_geterr(handle));
 
     return filter;
 }
 
 static VALUE
-rb_pcap_set_promisc(VALUE self, VALUE promiscuous)
+capp_set_promisc(VALUE self, VALUE promiscuous)
 {
     pcap_t *handle;
     int promisc = RTEST(promiscuous);
 
-    GetPcap(self, handle);
+    GetCapp(self, handle);
 
     if (pcap_set_promisc(handle, promisc))
-	rb_raise(ePcapError, "pcap already activated");
+	rb_raise(eCappError, "pcap already activated");
 
     return promiscuous;
 }
 
 static VALUE
-rb_pcap_set_snaplen(VALUE self, VALUE snaplen)
+capp_set_snaplen(VALUE self, VALUE snaplen)
 {
     pcap_t *handle;
 
-    GetPcap(self, handle);
+    GetCapp(self, handle);
 
     if (pcap_set_snaplen(handle, NUM2INT(snaplen)))
-	rb_raise(ePcapError, "pcap already activated");
+	rb_raise(eCappError, "pcap already activated");
 
     return snaplen;
 }
 
 static VALUE
-rb_pcap_set_timeout(VALUE self, VALUE milliseconds)
+capp_set_timeout(VALUE self, VALUE milliseconds)
 {
     pcap_t *handle;
 
-    GetPcap(self, handle);
+    GetCapp(self, handle);
 
     if (pcap_set_timeout(handle, NUM2INT(milliseconds)))
-	rb_raise(ePcapError, "pcap already activated");
+	rb_raise(eCappError, "pcap already activated");
 
     return milliseconds;
 }
 
 static VALUE
-rb_pcap_stats(VALUE self)
+capp_stats(VALUE self)
 {
     VALUE stats;
     pcap_t *handle;
     struct pcap_stat ps;
 
-    GetPcap(self, handle);
+    GetCapp(self, handle);
 
     if (pcap_stats(handle, &ps))
-	rb_raise(ePcapError, "pcap already activated");
+	rb_raise(eCappError, "pcap already activated");
 
     stats = rb_hash_new();
 
@@ -341,13 +341,13 @@ rb_pcap_stats(VALUE self)
 }
 
 static void
-rb_pcap_filter_free(struct bpf_program *program) {
+capp_filter_free(struct bpf_program *program) {
     pcap_freecode(program);
     free(program);
 }
 
 static VALUE
-rb_pcap_filter_s_create(VALUE klass, VALUE pcap, VALUE device, VALUE filter)
+capp_filter_s_create(VALUE klass, VALUE pcap, VALUE device, VALUE filter)
 {
     VALUE obj;
     pcap_t *handle;
@@ -361,61 +361,60 @@ rb_pcap_filter_s_create(VALUE klass, VALUE pcap, VALUE device, VALUE filter)
     res = pcap_lookupnet(StringValueCStr(device), &network, &netmask, errbuf);
 
     if (res == -1)
-	rb_raise(ePcapError, "%s", errbuf);
+	rb_raise(eCappError, "%s", errbuf);
 
     if (*errbuf)
 	rb_warn("%s", errbuf);
 
-    GetPcap(pcap, handle);
+    GetCapp(pcap, handle);
 
     res = pcap_compile(handle, program, StringValueCStr(filter), 1, network);
 
     if (res) {
 	free(program);
-	rb_raise(ePcapError, "%s", pcap_geterr(handle));
+	rb_raise(eCappError, "%s", pcap_geterr(handle));
     }
 
-    obj = Data_Wrap_Struct(klass, NULL, rb_pcap_filter_free, program);
+    obj = Data_Wrap_Struct(klass, NULL, capp_filter_free, program);
 
     return obj;
 }
 
 void
-Init_pcap(void) {
+Init_capp(void) {
     id_drop   = rb_intern("drop");
     id_ifdrop = rb_intern("ifdrop");
     id_recv   = rb_intern("recv");
     id_unpack_sockaddr_in = rb_intern("unpack_sockaddr_in");
 
-    cPcap        = rb_const_get(rb_cObject, rb_intern("Pcap"));
-    cPcapAddress = rb_const_get(cPcap, rb_intern("Address"));
-    cPcapDevice  = rb_const_get(cPcap, rb_intern("Device"));
-    cPcapPacket  = rb_const_get(cPcap, rb_intern("Packet"));
-    ePcapError   = rb_const_get(cPcap, rb_intern("Error"));
+    cCapp        = rb_const_get(rb_cObject, rb_intern("Capp"));
+    cCappAddress = rb_const_get(cCapp, rb_intern("Address"));
+    cCappDevice  = rb_const_get(cCapp, rb_intern("Device"));
+    cCappPacket  = rb_const_get(cCapp, rb_intern("Packet"));
+    eCappError   = rb_const_get(cCapp, rb_intern("Error"));
 
     cSocket = rb_const_get(rb_cObject, rb_intern("Socket"));
 
-    rb_undef_alloc_func(cPcap);
+    rb_undef_alloc_func(cCapp);
 
-    rb_define_singleton_method(cPcap, "create", rb_pcap_s_create, 1);
-    rb_define_singleton_method(cPcap, "default_device_name", rb_pcap_s_default_device_name, 0);
-    rb_define_singleton_method(cPcap, "devices", rb_pcap_s_devices, 0);
-    rb_define_singleton_method(cPcap, "open_live", rb_pcap_s_open_live, 4);
+    rb_define_singleton_method(cCapp, "create", capp_s_create, 1);
+    rb_define_singleton_method(cCapp, "default_device_name", capp_s_default_device_name, 0);
+    rb_define_singleton_method(cCapp, "devices", capp_s_devices, 0);
+    rb_define_singleton_method(cCapp, "open_live", capp_s_open_live, 4);
 
-    rb_define_method(cPcap, "activate", rb_pcap_activate, 0);
-    rb_define_method(cPcap, "filter=", rb_pcap_set_filter, 1);
-    rb_define_method(cPcap, "loop", rb_pcap_loop, 1);
-    rb_define_method(cPcap, "next", rb_pcap_next, 0);
-    rb_define_method(cPcap, "promiscuous=", rb_pcap_set_promisc, 1);
-    rb_define_method(cPcap, "snaplen=", rb_pcap_set_snaplen, 1);
-    rb_define_method(cPcap, "stats", rb_pcap_stats, 0);
-    rb_define_method(cPcap, "timeout=", rb_pcap_set_timeout, 1);
+    rb_define_method(cCapp, "activate", capp_activate, 0);
+    rb_define_method(cCapp, "filter=", capp_set_filter, 1);
+    rb_define_method(cCapp, "loop", capp_loop, 1);
+    rb_define_method(cCapp, "next", capp_next, 0);
+    rb_define_method(cCapp, "promiscuous=", capp_set_promisc, 1);
+    rb_define_method(cCapp, "snaplen=", capp_set_snaplen, 1);
+    rb_define_method(cCapp, "stats", capp_stats, 0);
+    rb_define_method(cCapp, "timeout=", capp_set_timeout, 1);
 
-    cPcapFilter = rb_define_class_under(cPcap, "Filter", rb_cObject);
+    cCappFilter = rb_define_class_under(cCapp, "Filter", rb_cObject);
 
-    rb_undef_alloc_func(cPcap);
+    rb_undef_alloc_func(cCapp);
 
-    rb_define_singleton_method(cPcapFilter, "compile",
-	    rb_pcap_filter_s_create, 3);
+    rb_define_singleton_method(cCappFilter, "compile", capp_filter_s_create, 3);
 }
 

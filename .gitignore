@@ -2,6 +2,6 @@
 *.swp
 /TAGS
 /doc
-/lib/pcap/pcap.bundle
+/lib/capp/capp.bundle
 /pkg
 /tmp

@@ -11,18 +11,18 @@ end
 Hoe.plugin :minitest
 Hoe.plugin :git
 
-HOE = Hoe.spec 'pcap' do
+HOE = Hoe.spec 'capp' do
   developer 'Eric Hodel', 'drbrain@segment7.net'
 
-  rdoc_locations << 'docs.seattlerb.org:/data/www/docs.seattlerb.org/pcap/'
+  rdoc_locations << 'docs.seattlerb.org:/data/www/docs.seattlerb.org/capp/'
 
   self.readme_file = 'README.rdoc'
 
   self.extra_dev_deps << ['rake-compiler', '~> 0.8']
 end
 
-Rake::ExtensionTask.new 'pcap', HOE.spec do |ext|
-  ext.lib_dir = 'lib/pcap'
+Rake::ExtensionTask.new 'capp', HOE.spec do |ext|
+  ext.lib_dir = 'lib/capp'
 end
 
 task test: :compile

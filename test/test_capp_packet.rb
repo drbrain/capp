@@ -1,9 +1,9 @@
 # encoding: BINARY
 
 require 'minitest/autorun'
-require 'pcap'
+require 'capp'
 
-class TestPcapPacket < MiniTest::Unit::TestCase
+class TestCappPacket < MiniTest::Unit::TestCase
 
   def setup
     super
@@ -17,7 +17,7 @@ class TestPcapPacket < MiniTest::Unit::TestCase
 
     length = @captured.length
 
-    @packet = Pcap::Packet.new @timestamp, length, length, @captured
+    @packet = Capp::Packet.new @timestamp, length, length, @captured
   end
 
   def test_dump
