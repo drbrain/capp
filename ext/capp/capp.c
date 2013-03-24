@@ -5,14 +5,16 @@
 #include "extconf.h"
 
 #define GetCapp(obj, capp) Data_Get_Struct(obj, pcap_t, capp)
-#define GetFilter(obj, capp) Data_Get_Struct(obj, struct bpf_program, capp)
 
-static ID id_drop, id_ifdrop, id_recv, id_unpack_sockaddr_in;
+static ID id_device;
+static ID id_drop;
+static ID id_ifdrop;
+static ID id_recv;
+static ID id_unpack_sockaddr_in;
 
 static VALUE cCapp;
 static VALUE cCappAddress;
 static VALUE cCappDevice;
-static VALUE cCappFilter;
 static VALUE cCappPacket;
 static VALUE cSocket;
 
@@ -36,6 +38,8 @@ capp_s_create(VALUE klass, VALUE device)
 	rb_warn("%s", errbuf);
 
     obj = Data_Wrap_Struct(klass, NULL, pcap_close, handle);
+
+    rb_ivar_set(obj, id_device, device);
 
     return obj;
 }
@@ -166,6 +170,8 @@ capp_s_open_live(VALUE klass, VALUE device, VALUE snaplen,
 
     obj = Data_Wrap_Struct(klass, NULL, pcap_close, handle);
 
+    rb_ivar_set(obj, id_device, device);
+
     return obj;
 }
 
@@ -267,16 +273,38 @@ capp_next(VALUE self)
 static VALUE
 capp_set_filter(VALUE self, VALUE filter)
 {
+    VALUE device;
     pcap_t *handle;
-    struct bpf_program *program;
+    struct bpf_program program;
+    bpf_u_int32 network, netmask;
+    char errbuf[PCAP_ERRBUF_SIZE];
+    int res;
+
+    device = rb_ivar_get(self, id_device);
+
+    *errbuf = '\0';
+
+    res = pcap_lookupnet(StringValueCStr(device), &network, &netmask, errbuf);
+
+    if (res == -1)
+	rb_raise(eCappError, "%s", errbuf);
+
+    if (*errbuf)
+	rb_warn("%s", errbuf);
 
     GetCapp(self, handle);
-    GetFilter(filter, program);
 
-    if (pcap_setfilter(handle, program))
+    res = pcap_compile(handle, &program, StringValueCStr(filter), 0, netmask);
+
+    printf("compile: %d\n", res);
+
+    if (res)
 	rb_raise(eCappError, "%s", pcap_geterr(handle));
 
-    return filter;
+    if (pcap_setfilter(handle, &program))
+	rb_raise(eCappError, "%s", pcap_geterr(handle));
+
+    return self;
 }
 
 static VALUE
@@ -340,48 +368,9 @@ capp_stats(VALUE self)
     return stats;
 }
 
-static void
-capp_filter_free(struct bpf_program *program) {
-    pcap_freecode(program);
-    free(program);
-}
-
-static VALUE
-capp_filter_s_create(VALUE klass, VALUE pcap, VALUE device, VALUE filter)
-{
-    VALUE obj;
-    pcap_t *handle;
-    struct bpf_program *program = ALLOC(struct bpf_program);
-    bpf_u_int32 network, netmask;
-    char errbuf[PCAP_ERRBUF_SIZE];
-    int res;
-
-    *errbuf = '\0';
-
-    res = pcap_lookupnet(StringValueCStr(device), &network, &netmask, errbuf);
-
-    if (res == -1)
-	rb_raise(eCappError, "%s", errbuf);
-
-    if (*errbuf)
-	rb_warn("%s", errbuf);
-
-    GetCapp(pcap, handle);
-
-    res = pcap_compile(handle, program, StringValueCStr(filter), 1, network);
-
-    if (res) {
-	free(program);
-	rb_raise(eCappError, "%s", pcap_geterr(handle));
-    }
-
-    obj = Data_Wrap_Struct(klass, NULL, capp_filter_free, program);
-
-    return obj;
-}
-
 void
 Init_capp(void) {
+    id_device = rb_intern("device");
     id_drop   = rb_intern("drop");
     id_ifdrop = rb_intern("ifdrop");
     id_recv   = rb_intern("recv");
@@ -410,11 +399,5 @@ Init_capp(void) {
     rb_define_method(cCapp, "snaplen=", capp_set_snaplen, 1);
     rb_define_method(cCapp, "stats", capp_stats, 0);
     rb_define_method(cCapp, "timeout=", capp_set_timeout, 1);
-
-    cCappFilter = rb_define_class_under(cCapp, "Filter", rb_cObject);
-
-    rb_undef_alloc_func(cCapp);
-
-    rb_define_singleton_method(cCappFilter, "compile", capp_filter_s_create, 3);
 }
 
