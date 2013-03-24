@@ -10,10 +10,12 @@ class TestCappPacket < MiniTest::Unit::TestCase
 
     @timestamp = Time.now
     @captured =
-      "\0\0$\xCFn6 \xC9\xD0H\xEBs\b\0E\0\0ZAB\0\0\xFF\x11-9\ne\x1CM\ne" +
-      "\x1C\x01\xD8.\05\0F\xA1\x8C\x0F\x06\x01\0\0\x01\0\0\0\0\0\0\x05" +
-      "e3191\x01c\nakamaiedge\x03net\x010\x011\x02cn\nakamaiedge\x03net" +
-      "\0\0\x01\0\x01"
+      "\x01\x00\x5e\x00\x00\xfb\x20\xc9\xd0\x48\xeb\x73\x08\x00\x45\x00" +
+      "\x00\x39\xef\x92\x00\x00\x01\x11\xc2\x74\x0a\x65\x1c\x4d\xe0\x00" +
+      "\x00\xfb\xfa\x0a\x14\xe9\x00\x25\x3a\x49\x02\x28\x01\x00\x00\x01" +
+      "\x00\x00\x00\x00\x00\x00\x05\x6b\x61\x75\x6c\x74\x05\x6c\x6f\x63" +
+      "\x61\x6c\x00\x00\x01\x00\x01"
+
 
     length = @captured.length
 
@@ -21,30 +23,39 @@ class TestCappPacket < MiniTest::Unit::TestCase
   end
 
   def test_dump
-    expected = "..$.n6 ..H"
+    expected = "..^... ..H"
     assert_equal expected, @packet.dump[0, 10]
   end
 
   def test_ethernet_header
     header = @packet.ethernet_header
 
-    assert_equal 0x00_00_24_cf_6e_36, header.destination, 'destination'
+    assert_equal 0x01_00_5e_00_00_fb, header.destination, 'destination'
     assert_equal 0x20_c9_d0_48_eb_73, header.source,      'source'
     assert_equal 0x0800,              header.ether_type,  'ether_type'
   end
 
   def test_hexdump
     expected = <<-EXPECTED
-\t0x0000:  0000 24cf 6e36 20c9 d048 eb73 0800 4500  ..$.n6 ..H.s..E.
-\t0x0010:  005a 4142 0000 ff11 2d39 0a65 1c4d 0a65  .ZAB....-9.e.M.e
-\t0x0020:  1c01 d82e 0500 46a1 8c0f 0601 0000 0100  ......F.........
-\t0x0030:  0000 0000 0005 6533 3139 3101 630a 616b  ......e3191.c.ak
-\t0x0040:  616d 6169 6564 6765 036e 6574 0130 0131  amaiedge.net.0.1
-\t0x0050:  0263 6e0a 616b 616d 6169 6564 6765 036e  .cn.akamaiedge.n
-\t0x0060:  6574 0000 0100 01                        et.....
+\t0x0000:  0100 5e00 00fb 20c9 d048 eb73 0800 4500  ..^... ..H.s..E.
+\t0x0010:  0039 ef92 0000 0111 c274 0a65 1c4d e000  .9.......t.e.M..
+\t0x0020:  00fb fa0a 14e9 0025 3a49 0228 0100 0001  .......%:I.(....
+\t0x0030:  0000 0000 0000 056b 6175 6c74 056c 6f63  .......kault.loc
+\t0x0040:  616c 0000 0100 01                        al.....
     EXPECTED
 
     assert_equal expected, @packet.hexdump
+  end
+
+  def test_hexdump_offset
+    expected = <<-EXPECTED
+\t0x0000:  4500 0039 ef92 0000 0111 c274 0a65 1c4d  E..9.......t.e.M
+\t0x0010:  e000 00fb fa0a 14e9 0025 3a49 0228 0100  .........%:I.(..
+\t0x0020:  0001 0000 0000 0000 056b 6175 6c74 056c  .........kault.l
+\t0x0030:  6f63 616c 0000 0100 01                   ocal.....
+    EXPECTED
+
+    assert_equal expected, @packet.hexdump(14)
   end
 
   def test_ip_payload
@@ -63,15 +74,28 @@ class TestCappPacket < MiniTest::Unit::TestCase
     assert_equal             5, header.ihl,             'ihl'
     assert_equal             0, header.dscp,            'dscp'
     assert_equal             0, header.ecn,             'ecn'
-    assert_equal            90, header.length,          'length'
-    assert_equal         16706, header.id,              'id'
+    assert_equal            57, header.length,          'length'
+    assert_equal         61330, header.id,              'id'
     assert_equal             0, header.flags,           'flags'
     assert_equal             0, header.fragment_offset, 'fragment offset'
-    assert_equal           255, header.ttl,             'ttl'
+    assert_equal             1, header.ttl,             'ttl'
     assert_equal            17, header.protocol,        'protocol'
-    assert_equal         11577, header.checksum,        'checksum'
+    assert_equal         49780, header.checksum,        'checksum'
     assert_equal 0x0a_65_1c_4d, header.source,          'source'
-    assert_equal 0x0a_65_1c_01, header.destination,     'destination'
+    assert_equal 0xe0_00_00_fb, header.destination,     'destination'
+  end
+
+  def test_udp_eh
+    assert @packet.udp?
+  end
+
+  def test_udp_header
+    header = @packet.udp_header
+
+    assert_equal 64010, header.source_port,      'source_port'
+    assert_equal  5353, header.destination_port, 'destination_port'
+    assert_equal    37, header.length,           'length'
+    assert_equal 14921, header.checksum,         'checksum'
   end
 
   def dump str

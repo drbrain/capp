@@ -2,6 +2,8 @@
 
 class Capp::Packet
 
+  UDP = Socket::IPPROTO_UDP
+
   EthernetHeader = Struct.new :destination, :source, :ether_type do
     def self.from_capture capture
       dst_a, dst_b, src_a, src_b, ether_type = capture.unpack 'nN nN n'
@@ -37,6 +39,18 @@ class Capp::Packet
     end
   end
 
+  UDPHeader = Struct.new :source_port, :destination_port, :length, :checksum do
+    def self.from_capture capture
+      vi, = capture.unpack '@14 C'
+
+      offset = 14 + (vi & 0x0f) * 4
+
+      src, dst, length, checksum = capture.unpack "@#{offset} n n n n"
+
+      new src, dst, length, checksum
+    end
+  end
+
   attr_reader :timestamp
   attr_reader :length
   attr_reader :capture_length
@@ -61,8 +75,10 @@ class Capp::Packet
       EthernetHeader.from_capture @captured
   end
 
-  def hexdump
-    @captured.scan(/.{,16}/m).map.with_index do |chunk, index|
+  def hexdump offset = 0
+    data = @captured[offset, @capture_length]
+
+    data.scan(/.{,16}/m).map.with_index do |chunk, index|
       next nil if chunk.empty?
       hex  = chunk.unpack('C*').map { |byte| '%02x' % byte }
       dump = chunk.tr "\000-\037\177-\377", "."
@@ -94,6 +110,14 @@ class Capp::Packet
 
   def ipv4_header
     @ipv4_header ||= IPv4Header.from_capture @captured
+  end
+
+  def udp?
+    ipv4? and ipv4_header.protocol == UDP
+  end
+
+  def udp_header
+    @udp_header ||= UDPHeader.from_capture @captured
   end
 
 end
