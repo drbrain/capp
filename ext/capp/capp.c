@@ -168,48 +168,6 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
 }
 
 static VALUE
-capp_activate(VALUE self, VALUE snaplen)
-{
-    pcap_t *handle;
-    int res;
-
-    GetCapp(self, handle);
-
-    res = pcap_activate(handle);
-
-    switch (res) {
-      case 0:
-	break;
-#ifdef HAVE_PCAP_WARNING_TSTAMP_TYPE_NOTSUP
-      case PCAP_WARNING_TSTAMP_TYPE_NOTSUP:
-	rb_warn("timestamp type not supported");
-	break;
-#endif
-      case PCAP_WARNING_PROMISC_NOTSUP:
-      case PCAP_WARNING:
-	rb_warn("%s", pcap_geterr(handle));
-	break;
-
-#ifdef HAVE_PCAP_ERROR_PROMISC_PERM_DENIED
-      case PCAP_ERROR_PROMISC_PERM_DENIED:
-	rb_raise(eCappError, "promiscuous permission denied");
-#endif
-      case PCAP_ERROR_ACTIVATED:
-	rb_raise(eCappError, "pcap already activated");
-      case PCAP_ERROR_RFMON_NOTSUP:
-	rb_raise(eCappError, "RF monitoring not supported");
-      case PCAP_ERROR_IFACE_NOT_UP:
-	rb_raise(eCappError, "interface not up");
-      case PCAP_ERROR_PERM_DENIED:
-      case PCAP_ERROR_NO_SUCH_DEVICE:
-      case PCAP_ERROR:
-	rb_raise(eCappError, "%s", pcap_geterr(handle));
-    }
-
-    return snaplen;
-}
-
-static VALUE
 capp_make_packet(const struct pcap_pkthdr *header, const u_char *data)
 {
     VALUE args[4];
@@ -425,7 +383,6 @@ Init_capp(void) {
     rb_define_singleton_method(cCapp, "devices", capp_s_devices, 0);
     rb_define_singleton_method(cCapp, "live", capp_s_open_live, -1);
 
-    rb_define_method(cCapp, "activate", capp_activate, 0);
     rb_define_method(cCapp, "filter=", capp_set_filter, 1);
     rb_define_method(cCapp, "loop", capp_loop, 0);
     rb_define_method(cCapp, "promiscuous=", capp_set_promisc, 1);
