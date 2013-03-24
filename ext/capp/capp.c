@@ -191,9 +191,10 @@ capp_s_devices(VALUE klass)
  * to see packets not sent to or from the device.  Promiscuous mode is enabled
  * by default.
  *
- * Since Capp is GVL-friendly, +timeout+ is useless.  The default timeout is
- * 1000 milliseconds, but since Capp#loop only returns when your return from
- * the block, setting it is useless.
+ * The +timeout+ is the number of maximum number of milliseconds that will
+ * elapse between receiving a packet and yielding it to the block given to
+ * #loop.  The default timeout is 10 milliseconds.  See #timeout= for further
+ * discussion.
  */
 static VALUE
 capp_s_open_live(int argc, VALUE *argv, VALUE klass)
@@ -208,7 +209,7 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
     if (!RTEST(device))      device      = capp_s_default_device_name(klass);
     if (!RTEST(snaplen))     snaplen     = INT2NUM(-1);
     if (!RTEST(promiscuous)) promiscuous = Qtrue;
-    if (!RTEST(timeout))     timeout     = INT2NUM(65535);
+    if (!RTEST(timeout))     timeout     = INT2NUM(10);
 
     if (RTEST(promiscuous))
 	promisc = 1;
@@ -427,9 +428,17 @@ capp_set_snaplen(VALUE self, VALUE snaplen)
  *
  * Sets the timeout to +milliseconds+
  *
- * Since Capp is GVL-friendly, setting the timeout is useless.  The default
- * timeout is 1000 milliseconds, but since Capp#loop only returns when your
- * return from the block, setting it is useless.
+ * The +timeout+ is the number of maximum number of milliseconds that will
+ * elapse between receiving a packet and yielding it to the block given to
+ * #loop.
+ *
+ * Reducing the timeout will increase responsiveness as pcap_loop(3) must
+ * "check in" more frequently while increasing the timeout will reduce
+ * responsiveness.
+ *
+ * Setting the timeout too low may increase GVL contention when many packets
+ * are arriving at once as #loop will be waking up frequently to service
+ * captured packets.
  */
 static VALUE
 capp_set_timeout(VALUE self, VALUE milliseconds)
