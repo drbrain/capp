@@ -27,30 +27,6 @@ static VALUE cSocket;
 static VALUE eCappError;
 
 static VALUE
-capp_s_create(VALUE klass, VALUE device)
-{
-    VALUE obj;
-    char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_t *handle;
-
-    handle = pcap_create(StringValueCStr(device), errbuf);
-
-    *errbuf = '\0';
-
-    if (NULL == handle)
-	rb_raise(eCappError, "pcap_create: %s", errbuf);
-
-    if (*errbuf)
-	rb_warn("%s", errbuf);
-
-    obj = Data_Wrap_Struct(klass, NULL, pcap_close, handle);
-
-    rb_ivar_set(obj, id_device, device);
-
-    return obj;
-}
-
-static VALUE
 capp_s_default_device_name(VALUE klass)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -224,31 +200,6 @@ capp_activate(VALUE self, VALUE snaplen)
 }
 
 static VALUE
-capp_get_nonblock(VALUE self)
-{
-    char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_t *handle;
-    int res;
-
-    GetCapp(self, handle);
-
-    *errbuf = '\0';
-
-    res = pcap_getnonblock(handle, errbuf);
-
-    if (-1 == res)
-	rb_raise(eCappError, "pcap_create: %s", errbuf);
-
-    if (*errbuf)
-	rb_warn("%s", errbuf);
-
-    if (res)
-	return Qtrue;
-
-    return Qfalse;
-}
-
-static VALUE
 capp_make_packet(const struct pcap_pkthdr *header, const u_char *data)
 {
     VALUE args[4];
@@ -347,34 +298,6 @@ capp_loop(VALUE self)
 }
 
 static VALUE
-capp_next(VALUE self)
-{
-    pcap_t *handle;
-    struct pcap_pkthdr *header = NULL;
-    const u_char *data = NULL;
-    int res;
-
-    GetCapp(self, handle);
-
-    res = pcap_next_ex(handle, &header, &data);
-
-    switch (res) {
-    case -2: /* out of packets in file */
-	rb_raise(eCappError, "out of packets");
-    case -1: /* error */
-	rb_raise(eCappError, "%s", pcap_geterr(handle));
-	break; /* not reached */
-    case  0: /* timeout expired */
-	return Qnil;
-    case  1: /* read packet */
-    default:
-	break;
-    }
-
-    return capp_make_packet(header, data);
-}
-
-static VALUE
 capp_set_filter(VALUE self, VALUE filter)
 {
     VALUE device;
@@ -407,31 +330,6 @@ capp_set_filter(VALUE self, VALUE filter)
 	rb_raise(eCappError, "%s", pcap_geterr(handle));
 
     return self;
-}
-
-static VALUE
-capp_set_nonblock(VALUE self, VALUE nonblock)
-{
-    char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_t *handle;
-    int res, value = 0;
-
-    if (RTEST(nonblock))
-	value = 1;
-
-    GetCapp(self, handle);
-
-    *errbuf = '\0';
-
-    res = pcap_setnonblock(handle, value, errbuf);
-
-    if (-1 == res)
-	rb_raise(eCappError, "pcap_create: %s", errbuf);
-
-    if (*errbuf)
-	rb_warn("%s", errbuf);
-
-    return nonblock;
 }
 
 static VALUE
@@ -513,7 +411,6 @@ Init_capp(void) {
 
     rb_undef_alloc_func(cCapp);
 
-    rb_define_singleton_method(cCapp, "create", capp_s_create, 1);
     rb_define_singleton_method(cCapp, "default_device_name", capp_s_default_device_name, 0);
     rb_define_singleton_method(cCapp, "devices", capp_s_devices, 0);
     rb_define_singleton_method(cCapp, "open_live", capp_s_open_live, 4);
@@ -521,9 +418,6 @@ Init_capp(void) {
     rb_define_method(cCapp, "activate", capp_activate, 0);
     rb_define_method(cCapp, "filter=", capp_set_filter, 1);
     rb_define_method(cCapp, "loop", capp_loop, 0);
-    rb_define_method(cCapp, "next", capp_next, 0);
-    rb_define_method(cCapp, "nonblock", capp_get_nonblock, 0);
-    rb_define_method(cCapp, "nonblock=", capp_set_nonblock, 1);
     rb_define_method(cCapp, "promiscuous=", capp_set_promisc, 1);
     rb_define_method(cCapp, "snaplen=", capp_set_snaplen, 1);
     rb_define_method(cCapp, "stats", capp_stats, 0);
