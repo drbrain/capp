@@ -6,19 +6,39 @@ bugs :: https://github.com/drbrain/capp/issues
 
 == Description
 
-FIX (describe your package)
-
-== Features and Problems
-
-* FIX (list of features or problems)
+Capp is a GVL-friendly pcap wrapper library.  Capp provides a simple API for
+capturing packets that cooperates with other threads.
 
 == Synopsis
 
-  FIX (code sample of usage)
+Basic single-thread packet capturing:
+
+  require 'capp'
+
+  Capp.live.loop do |packet|
+    # ...
+  end
+
+Basic multi-thread packet capturing:
+
+  require 'capp'
+  require 'thread'
+
+  q = Queue.new
+
+  Thread.new do
+    while packet = q.deq do
+      # ...
+    end
+  end
+
+  capp = Capp.live.loop do |packet|
+    q.enq packet
+  end
 
 == Requirements
 
-* FIX (list of requirements)
+* libpcap
 
 == Install
 

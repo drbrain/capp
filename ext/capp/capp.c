@@ -26,6 +26,12 @@ static VALUE cSocket;
 
 static VALUE eCappError;
 
+/*
+ * call-seq:
+ *   Capp.default_device_name -> string
+ *
+ * Returns the default device name
+ */
 static VALUE
 capp_s_default_device_name(VALUE klass)
 {
@@ -94,6 +100,40 @@ capp_addr_to_addresses(pcap_addr_t *addrs)
     return addresses;
 }
 
+/*
+ * call-seq:
+ *   Capp.devices -> array
+ *
+ * Returns an Array containing the devices and their various addresses:
+ *
+ *   [#<struct Capp::Address
+ *     address="lo0",
+ *     netmask=nil,
+ *     broadcast=
+ *      [#<struct Capp::Address
+ *        address="",
+ *        netmask=nil,
+ *        broadcast=nil,
+ *        destination=nil>,
+ *       #<struct Capp::Address
+ *        address="fe80::1%lo0",
+ *        netmask="ffff:ffff:ffff:ffff::",
+ *        broadcast=nil,
+ *        destination=nil>,
+ *       #<struct Capp::Address
+ *        address="127.0.0.1",
+ *        netmask="255.0.0.0",
+ *        broadcast=nil,
+ *        destination=nil>,
+ *       #<struct Capp::Address
+ *        address="::1",
+ *        netmask="ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+ *        broadcast=nil,
+ *        destination=nil>],
+ *     destination=1>,
+ *     # [...]
+ *   ]
+ */
 static VALUE
 capp_s_devices(VALUE klass)
 {
@@ -131,6 +171,30 @@ capp_s_devices(VALUE klass)
     return devices;
 }
 
+/*
+ * call-seq:
+ *   Capp.live						    -> capp
+ *   Capp.live device					    -> capp
+ *   Capp.live device, capture_length,                      -> capp
+ *   Capp.live device, capture_length, promiscuous          -> capp
+ *   Capp.live device, capture_length, promiscuous, timeout -> capp
+ *
+ * Creates a new Capp.
+ *
+ * +device+ is the device to capture packets from.  If the device is omitted
+ * the default device (::default_device_name) is used.
+ *
+ * +capture_length+ is the number of bytes to capture from each packet.  If
+ * a length is omitted 65535 is used.
+ *
+ * +promiscuous+ places the device in promiscuous mode when true, allowing you
+ * to see packets not sent to or from the device.  Promiscuous mode is enabled
+ * by default.
+ *
+ * Since Capp is GVL-friendly, +timeout+ is useless.  The default timeout is
+ * 1000 milliseconds, but since Capp#loop only returns when your return from
+ * the block, setting it is useless.
+ */
 static VALUE
 capp_s_open_live(int argc, VALUE *argv, VALUE klass)
 {
@@ -144,7 +208,7 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
     if (!RTEST(device))      device      = capp_s_default_device_name(klass);
     if (!RTEST(snaplen))     snaplen     = INT2NUM(-1);
     if (!RTEST(promiscuous)) promiscuous = Qtrue;
-    if (!RTEST(timeout))     timeout     = INT2NUM(1000);
+    if (!RTEST(timeout))     timeout     = INT2NUM(65535);
 
     if (RTEST(promiscuous))
 	promisc = 1;
@@ -256,6 +320,16 @@ capp_loop_run(VALUE self)
     return self;
 }
 
+/*
+ * call-seq:
+ *   capp.loop { |packet| ... } -> self
+ *   capp.loop                  -> enumerator
+ *
+ * Starts capturing packets.  Each packet captured is yielded to the block.
+ * Packets are instances of Capp::Packet.
+ *
+ * If no block is given an enumerator is returned.
+ */
 static VALUE
 capp_loop(VALUE self)
 {
@@ -266,6 +340,13 @@ capp_loop(VALUE self)
     return self;
 }
 
+/*
+ * call-seq:
+ *   capp.filter filter -> self
+ *
+ * Sets the packet filter to the given +filter+ string.  The format is the
+ * same format as tcpdump(1).  You can see the syntax at pcap-filter(7).
+ */
 static VALUE
 capp_set_filter(VALUE self, VALUE filter)
 {
@@ -301,6 +382,12 @@ capp_set_filter(VALUE self, VALUE filter)
     return self;
 }
 
+/*
+ * call-seq:
+ *   capp.promiscuous = boolean
+ *
+ * Enables or disables promiscuous mode.
+ */
 static VALUE
 capp_set_promisc(VALUE self, VALUE promiscuous)
 {
@@ -315,6 +402,12 @@ capp_set_promisc(VALUE self, VALUE promiscuous)
     return promiscuous;
 }
 
+/*
+ * call-seq:
+ *   capp.snaplen = length
+ *
+ * Sets the packet capture length to +length+.
+ */
 static VALUE
 capp_set_snaplen(VALUE self, VALUE snaplen)
 {
@@ -328,6 +421,16 @@ capp_set_snaplen(VALUE self, VALUE snaplen)
     return snaplen;
 }
 
+/*
+ * call-seq:
+ *   capp.timeout = milliseconds
+ *
+ * Sets the timeout to +milliseconds+
+ *
+ * Since Capp is GVL-friendly, setting the timeout is useless.  The default
+ * timeout is 1000 milliseconds, but since Capp#loop only returns when your
+ * return from the block, setting it is useless.
+ */
 static VALUE
 capp_set_timeout(VALUE self, VALUE milliseconds)
 {
@@ -341,6 +444,14 @@ capp_set_timeout(VALUE self, VALUE milliseconds)
     return milliseconds;
 }
 
+/*
+ * call-seq:
+ *   capp.stats -> hash
+ *
+ * Retrieves packet capture statistics:
+ *
+ *   p capp.stats #=> {:drop => 0, :ifdrop => 0, :recv => 123}
+ */
 static VALUE
 capp_stats(VALUE self)
 {
@@ -370,7 +481,8 @@ Init_capp(void) {
     id_recv   = rb_intern("recv");
     id_unpack_sockaddr_in = rb_intern("unpack_sockaddr_in");
 
-    cCapp        = rb_const_get(rb_cObject, rb_intern("Capp"));
+    cCapp        = rb_define_class("Capp", rb_cObject);
+
     cCappAddress = rb_const_get(cCapp, rb_intern("Address"));
     cCappDevice  = rb_const_get(cCapp, rb_intern("Device"));
     cCappPacket  = rb_const_get(cCapp, rb_intern("Packet"));
