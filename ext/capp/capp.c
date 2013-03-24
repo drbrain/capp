@@ -242,13 +242,25 @@ capp_get_nonblock(VALUE self)
     return Qfalse;
 }
 
+static VALUE
+capp_make_packet(const struct pcap_pkthdr *header, const u_char *data)
+{
+    VALUE args[4];
+
+    args[0] = rb_time_new(header->ts.tv_sec, header->ts.tv_usec);
+    args[1] = UINT2NUM(header->len);
+    args[2] = UINT2NUM(header->caplen);
+    args[3] = rb_str_new((const char *)data, header->caplen);
+
+    return rb_class_new_instance(4, args, cCappPacket);
+}
+
 static void
 capp_loop_callback(u_char *args, const struct pcap_pkthdr *header,
-	const u_char *packet) {
+	const u_char *data) {
     VALUE self = (VALUE)args;
 
-    rb_p(self);
-    printf("woo\n");
+    rb_yield(capp_make_packet(header, data));
 }
 
 static VALUE
@@ -272,7 +284,6 @@ capp_loop(VALUE self, VALUE count)
 static VALUE
 capp_next(VALUE self)
 {
-    VALUE packet, args[4];
     pcap_t *handle;
     struct pcap_pkthdr *header = NULL;
     const u_char *data = NULL;
@@ -295,14 +306,7 @@ capp_next(VALUE self)
 	break;
     }
 
-    args[0] = rb_time_new(header->ts.tv_sec, header->ts.tv_usec);
-    args[1] = UINT2NUM(header->len);
-    args[2] = UINT2NUM(header->caplen);
-    args[3] = rb_str_new((const char *)data, header->caplen);
-
-    packet = rb_class_new_instance(4, args, cCappPacket);
-
-    return packet;
+    return capp_make_packet(header, data);
 }
 
 static VALUE
