@@ -217,6 +217,31 @@ capp_activate(VALUE self, VALUE snaplen)
     return snaplen;
 }
 
+static VALUE
+capp_get_nonblock(VALUE self)
+{
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_t *handle;
+    int res;
+
+    GetCapp(self, handle);
+
+    *errbuf = '\0';
+
+    res = pcap_getnonblock(handle, errbuf);
+
+    if (-1 == res)
+	rb_raise(eCappError, "pcap_create: %s", errbuf);
+
+    if (*errbuf)
+	rb_warn("%s", errbuf);
+
+    if (res)
+	return Qtrue;
+
+    return Qfalse;
+}
+
 static void
 capp_loop_callback(u_char *args, const struct pcap_pkthdr *header,
 	const u_char *packet) {
@@ -257,8 +282,18 @@ capp_next(VALUE self)
 
     res = pcap_next_ex(handle, &header, &data);
 
-    if (res == -1)
+    switch (res) {
+    case -2: /* out of packets in file */
+	rb_raise(eCappError, "out of packets");
+    case -1: /* error */
 	rb_raise(eCappError, "%s", pcap_geterr(handle));
+	break; /* not reached */
+    case  0: /* timeout expired */
+	return Qnil;
+    case  1: /* read packet */
+    default:
+	break;
+    }
 
     args[0] = rb_time_new(header->ts.tv_sec, header->ts.tv_usec);
     args[1] = UINT2NUM(header->len);
@@ -296,8 +331,6 @@ capp_set_filter(VALUE self, VALUE filter)
 
     res = pcap_compile(handle, &program, StringValueCStr(filter), 0, netmask);
 
-    printf("compile: %d\n", res);
-
     if (res)
 	rb_raise(eCappError, "%s", pcap_geterr(handle));
 
@@ -305,6 +338,31 @@ capp_set_filter(VALUE self, VALUE filter)
 	rb_raise(eCappError, "%s", pcap_geterr(handle));
 
     return self;
+}
+
+static VALUE
+capp_set_nonblock(VALUE self, VALUE nonblock)
+{
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_t *handle;
+    int res, value = 0;
+
+    if (RTEST(nonblock))
+	value = 1;
+
+    GetCapp(self, handle);
+
+    *errbuf = '\0';
+
+    res = pcap_setnonblock(handle, value, errbuf);
+
+    if (-1 == res)
+	rb_raise(eCappError, "pcap_create: %s", errbuf);
+
+    if (*errbuf)
+	rb_warn("%s", errbuf);
+
+    return nonblock;
 }
 
 static VALUE
@@ -395,6 +453,8 @@ Init_capp(void) {
     rb_define_method(cCapp, "filter=", capp_set_filter, 1);
     rb_define_method(cCapp, "loop", capp_loop, 1);
     rb_define_method(cCapp, "next", capp_next, 0);
+    rb_define_method(cCapp, "nonblock", capp_get_nonblock, 0);
+    rb_define_method(cCapp, "nonblock=", capp_set_nonblock, 1);
     rb_define_method(cCapp, "promiscuous=", capp_set_promisc, 1);
     rb_define_method(cCapp, "snaplen=", capp_set_snaplen, 1);
     rb_define_method(cCapp, "stats", capp_stats, 0);
