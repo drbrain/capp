@@ -59,20 +59,37 @@ class Capp::Packet
     end.join "\n"
   end
 
-  def ip_payload
-    if ihl = ipv4? then
-      @captured[14 + ihl * 4, @capture_length]
-    else
-      raise NotImplementedError
+  def payload
+    @captured[payload_offset, @capture_length]
+  end
+
+  def payload_offset
+    offset = 14
+
+    case
+    when ipv4? then offset += @ipv4_header.ihl * 4
+    else            raise NotImplementedError
     end
+
+    case
+    when tcp? then offset += @tcp_header.offset * 4
+    when udp? then offset += 8
+    else           raise NotImplementedError
+    end
+
+    offset
   end
 
   def ipv4?
     @ipv4_header
   end
 
+  def tcp?
+    @tcp_header
+  end
+
   def udp?
-    ipv4? and ipv4_header.protocol == UDP
+    @udp_header
   end
 
 end
