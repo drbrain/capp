@@ -8,6 +8,8 @@ class TestCappPacket < MiniTest::Unit::TestCase
   def setup
     super
 
+    @CP = Capp::Packet
+
     @timestamp = Time.now
     @captured =
       "\x01\x00\x5e\x00\x00\xfb\x20\xc9\xd0\x48\xeb\x73\x08\x00\x45\x00" +
@@ -19,11 +21,22 @@ class TestCappPacket < MiniTest::Unit::TestCase
 
     length = @captured.length
 
-    @packet = Capp::Packet.new @timestamp, length, length, @captured
+    @headers = {
+      ethernet_header:
+        @CP::EthernetHeader.new(0x01_00_5e_00_00_fb, 0x20_c9_d0_48_eb_73,
+                                0x0800),
+      ipv4_header:
+        @CP::IPv4Header.new(4, 5, 0, 57, 61330, 0, 0, 1, 17, 49780,
+                            0x0a_65_1c_4d, 0xe0_00_00_fb),
+      udp_header:
+        @CP::UDPHeader.new(64010, 5353, 37, 14921),
+    }
+
+    @packet = @CP.new @timestamp, length, length, @captured, @headers
   end
 
   def test_dump
-    expected = "..^... ..H"
+    expected = '..^... ..H'
     assert_equal expected, @packet.dump[0, 10]
   end
 
@@ -32,7 +45,7 @@ class TestCappPacket < MiniTest::Unit::TestCase
 
     assert_equal 0x01_00_5e_00_00_fb, header.destination, 'destination'
     assert_equal 0x20_c9_d0_48_eb_73, header.source,      'source'
-    assert_equal 0x0800,              header.ether_type,  'ether_type'
+    assert_equal 0x0800,              header.type,        'type'
   end
 
   def test_hexdump
@@ -58,44 +71,17 @@ class TestCappPacket < MiniTest::Unit::TestCase
     assert_equal expected, @packet.hexdump(14)
   end
 
-  def test_ip_payload
-    expected = dump @captured[34, @captured.length]
-    assert_equal expected, dump(@packet.ip_payload)
+  def test_payload
+    expected = dump @captured[42, @captured.length]
+    assert_equal expected, dump(@packet.payload)
   end
 
   def test_ipv4_eh
     assert @packet.ipv4?
   end
 
-  def test_ipv4_header
-    header = @packet.ipv4_header
-
-    assert_equal             4, header.version,         'version'
-    assert_equal             5, header.ihl,             'ihl'
-    assert_equal             0, header.dscp,            'dscp'
-    assert_equal             0, header.ecn,             'ecn'
-    assert_equal            57, header.length,          'length'
-    assert_equal         61330, header.id,              'id'
-    assert_equal             0, header.flags,           'flags'
-    assert_equal             0, header.fragment_offset, 'fragment offset'
-    assert_equal             1, header.ttl,             'ttl'
-    assert_equal            17, header.protocol,        'protocol'
-    assert_equal         49780, header.checksum,        'checksum'
-    assert_equal 0x0a_65_1c_4d, header.source,          'source'
-    assert_equal 0xe0_00_00_fb, header.destination,     'destination'
-  end
-
   def test_udp_eh
     assert @packet.udp?
-  end
-
-  def test_udp_header
-    header = @packet.udp_header
-
-    assert_equal 64010, header.source_port,      'source_port'
-    assert_equal  5353, header.destination_port, 'destination_port'
-    assert_equal    37, header.length,           'length'
-    assert_equal 14921, header.checksum,         'checksum'
   end
 
   def dump str
