@@ -8,6 +8,7 @@
 #include <netinet/udp.h>
 
 #include <ruby.h>
+#include <ruby/io.h>
 #include <ruby/thread.h>
 
 #include "extconf.h"
@@ -230,7 +231,6 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
     if (RTEST(promiscuous))
 	promisc = 1;
 
-
     *errbuf = '\0';
 
     handle = pcap_open_live(StringValueCStr(device), NUM2INT(snaplen),
@@ -245,6 +245,57 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
     obj = Data_Wrap_Struct(klass, NULL, pcap_close, handle);
 
     rb_ivar_set(obj, id_device, device);
+
+    return obj;
+}
+
+/*
+ * call-seq:
+ *   Capp.offline file     -> capp
+ *   Capp.offline filename -> capp
+ *
+ * Creates an offline Capp that reads from a pcap savefile.  A savefile may be
+ * loaded from an open +file+:
+ *
+ *   open 'savefile' do |io|
+ *     capp = Capp.offline io
+ *     # ...
+ *   end
+ *
+ * Or a +filename+:
+ *
+ *   capp = Capp.offline 'savefile'
+ */
+static VALUE
+capp_s_open_offline(VALUE klass, VALUE file)
+{
+    VALUE obj;
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_t *handle;
+
+    *errbuf = '\0';
+
+    if (RFILE(file)) {
+	rb_io_t *fptr;
+
+	GetOpenFile(file, fptr);
+
+	handle = pcap_fopen_offline(rb_io_stdio_file(fptr), errbuf);
+    } else {
+	handle = pcap_open_offline(StringValueCStr(file), errbuf);
+    }
+
+    if (NULL == handle) {
+	if (RFILE(file))
+	    rb_raise(eCappError, "pcap_fopen_offline: %s", errbuf);
+
+	rb_raise(eCappError, "pcap_open_offline: %s", errbuf);
+    }
+
+    if (*errbuf)
+	rb_warn("%s", errbuf);
+
+    obj = Data_Wrap_Struct(klass, NULL, pcap_close, handle);
 
     return obj;
 }
@@ -631,6 +682,7 @@ Init_capp(void) {
     rb_define_singleton_method(cCapp, "default_device_name", capp_s_default_device_name, 0);
     rb_define_singleton_method(cCapp, "devices", capp_s_devices, 0);
     rb_define_singleton_method(cCapp, "live", capp_s_open_live, -1);
+    rb_define_singleton_method(cCapp, "offline", capp_s_open_offline, 1);
 
     rb_define_method(cCapp, "filter=", capp_set_filter, 1);
     rb_define_method(cCapp, "loop", capp_loop, 0);
