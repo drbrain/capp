@@ -20,13 +20,13 @@ struct capp_packet {
 
 #define GetCapp(obj, capp) Data_Get_Struct(obj, pcap_t, capp)
 
-static ID id_device;
 static ID id_drop;
 static ID id_ethernet_header;
-static ID id_type;
 static ID id_ifdrop;
 static ID id_ipv4_header;
+static ID id_ivar_device;
 static ID id_recv;
+static ID id_type;
 static ID id_tcp_header;
 static ID id_udp_header;
 static ID id_unpack_sockaddr_in;
@@ -244,7 +244,7 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
 
     obj = Data_Wrap_Struct(klass, NULL, pcap_close, handle);
 
-    rb_ivar_set(obj, id_device, device);
+    rb_ivar_set(obj, id_ivar_device, device);
 
     return obj;
 }
@@ -275,7 +275,7 @@ capp_s_open_offline(VALUE klass, VALUE file)
 
     *errbuf = '\0';
 
-    if (RFILE(file)) {
+    if (TYPE(file) == T_FILE) {
 	rb_io_t *fptr;
 
 	GetOpenFile(file, fptr);
@@ -296,6 +296,8 @@ capp_s_open_offline(VALUE klass, VALUE file)
 	rb_warn("%s", errbuf);
 
     obj = Data_Wrap_Struct(klass, NULL, pcap_close, handle);
+
+    rb_ivar_set(obj, id_ivar_device, Qnil);
 
     return obj;
 }
@@ -458,12 +460,7 @@ capp_loop_run_no_gvl(void *ptr)
     pcap_t *handle = (pcap_t *)ptr;
     int res;
 
-    for (;;) {
-	res = pcap_loop(handle, 0, capp_loop_callback, NULL);
-
-	if (res != 0)
-	    break;
-    }
+    res = pcap_loop(handle, -1, capp_loop_callback, NULL);
 
     return (void *)res;
 }
@@ -471,8 +468,11 @@ capp_loop_run_no_gvl(void *ptr)
 static VALUE
 capp_loop_run(VALUE self)
 {
+    VALUE device;
     pcap_t *handle;
     int res;
+
+    device = rb_ivar_get(self, id_ivar_device);
 
     GetCapp(self, handle);
 
@@ -522,7 +522,7 @@ capp_set_filter(VALUE self, VALUE filter)
     char errbuf[PCAP_ERRBUF_SIZE];
     int res;
 
-    device = rb_ivar_get(self, id_device);
+    device = rb_ivar_get(self, id_ivar_device);
 
     *errbuf = '\0';
 
@@ -648,11 +648,11 @@ capp_stats(VALUE self)
 
 void
 Init_capp(void) {
-    id_device             = rb_intern("device");
     id_drop               = rb_intern("drop");
     id_ethernet_header    = rb_intern("ethernet_header");
     id_ifdrop             = rb_intern("ifdrop");
     id_ipv4_header        = rb_intern("ipv4_header");
+    id_ivar_device        = rb_intern("@device");
     id_recv               = rb_intern("recv");
     id_tcp_header         = rb_intern("tcp_header");
     id_type               = rb_intern("type");

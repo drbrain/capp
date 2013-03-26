@@ -26,13 +26,13 @@ require 'socket'
 #   require 'thread'
 #
 #   q = Queue.new
-# 
+#
 #   Thread.new do
 #     while packet = q.deq do
 #       # ...
 #     end
 #   end
-# 
+#
 #   capp = Capp.live.loop do |packet|
 #     q.enq packet
 #   end
@@ -59,6 +59,8 @@ class Capp
   # A device which Capp can listen on, returned by Capp::devices
 
   Device  = Struct.new :name, :description, :addresses, :flags
+
+  attr_reader :device
 
 end
 
