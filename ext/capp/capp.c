@@ -518,21 +518,24 @@ capp_set_filter(VALUE self, VALUE filter)
     VALUE device;
     pcap_t *handle;
     struct bpf_program program;
-    bpf_u_int32 network, netmask;
+    bpf_u_int32 network, netmask = PCAP_NETMASK_UNKNOWN;
     char errbuf[PCAP_ERRBUF_SIZE];
     int res;
 
     device = rb_ivar_get(self, id_ivar_device);
 
-    *errbuf = '\0';
+    if (RTEST(device)) {
+	*errbuf = '\0';
 
-    res = pcap_lookupnet(StringValueCStr(device), &network, &netmask, errbuf);
+	res =
+	    pcap_lookupnet(StringValueCStr(device), &network, &netmask, errbuf);
 
-    if (res == -1)
-	rb_raise(eCappError, "%s", errbuf);
+	if (res == -1)
+	    rb_raise(eCappError, "%s", errbuf);
 
-    if (*errbuf)
-	rb_warn("%s", errbuf);
+	if (*errbuf)
+	    rb_warn("%s", errbuf);
+    }
 
     GetCapp(self, handle);
 
@@ -635,7 +638,7 @@ capp_stats(VALUE self)
     GetCapp(self, handle);
 
     if (pcap_stats(handle, &ps))
-	rb_raise(eCappError, "pcap already activated");
+	rb_raise(eCappError, "%s", pcap_geterr(handle));
 
     stats = rb_hash_new();
 
