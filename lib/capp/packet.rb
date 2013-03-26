@@ -12,7 +12,7 @@ class Capp::Packet
                           :source, :destination, :payload_offset
 
   TCPHeader = Struct.new :source_port, :destination_port,
-                         :sequence_number, :acknowledgement_number,
+                         :seq_number, :ack_number,
                          :offset, :flags, :window, :checksum, :urgent
 
   UDPHeader = Struct.new :source_port, :destination_port, :length, :checksum

@@ -7,4 +7,8 @@ ext/capp/capp.c
 ext/capp/extconf.rb
 lib/capp.rb
 lib/capp/packet.rb
+test/icmp4.pcap
+test/tcp4.pcap
+test/test_capp.rb
 test/test_capp_packet.rb
+test/udp4.pcap
