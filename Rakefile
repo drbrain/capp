@@ -8,8 +8,9 @@ rescue LoadError => e
   warn "missing #{e.path} (for rake-compiler)"
 end
 
-Hoe.plugin :minitest
 Hoe.plugin :git
+Hoe.plugin :minitest
+Hoe.plugin :travis
 
 HOE = Hoe.spec 'capp' do
   developer 'Eric Hodel', 'drbrain@segment7.net'
