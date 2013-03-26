@@ -6,6 +6,8 @@ class Capp::Packet
 
   EthernetHeader = Struct.new :destination, :source, :type
 
+  ICMPHeader = Struct.new :type, :code, :checksum, :data
+
   IPv4Header = Struct.new :version, :ihl, :tos, :length,
                           :id, :offset,
                           :ttl, :protocol, :checksum,
@@ -20,6 +22,7 @@ class Capp::Packet
   attr_reader :capture_length
   attr_reader :captured
   attr_reader :ethernet_header
+  attr_reader :icmp_header
   attr_reader :ipv4_header
   attr_reader :length
   attr_reader :tcp_header
@@ -33,6 +36,7 @@ class Capp::Packet
     @timestamp      = timestamp
 
     @ethernet_header = headers[:ethernet_header]
+    @icmp_header     = headers[:icmp_header]
     @ipv4_header     = headers[:ipv4_header]
     @tcp_header      = headers[:tcp_header]
     @udp_header      = headers[:udp_header]

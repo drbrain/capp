@@ -4,6 +4,7 @@
 #include <net/ethernet.h>
 #include <net/if_dl.h>
 #include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 
@@ -22,6 +23,7 @@ struct capp_packet {
 
 static ID id_drop;
 static ID id_ethernet_header;
+static ID id_icmp_header;
 static ID id_ifdrop;
 static ID id_ipv4_header;
 static ID id_ivar_device;
@@ -36,6 +38,7 @@ static VALUE cCappAddress;
 static VALUE cCappDevice;
 static VALUE cCappPacket;
 static VALUE cCappPacketEthernetHeader;
+static VALUE cCappPacketICMPHeader;
 static VALUE cCappPacketIPv4Header;
 static VALUE cCappPacketTCPHeader;
 static VALUE cCappPacketUDPHeader;
@@ -319,6 +322,19 @@ capp_make_ethernet_header(VALUE headers, const struct ether_header *ether)
 }
 
 static void
+capp_make_icmp_header(VALUE headers, const struct icmp *header)
+{
+    VALUE icmp_args[3];
+
+    icmp_args[0] = UINT2NUM(header->icmp_type);
+    icmp_args[1] = UINT2NUM(header->icmp_code);
+    icmp_args[2] = UINT2NUM(ntohs(header->icmp_cksum));
+
+    rb_hash_aset(headers, ID2SYM(id_icmp_header),
+	    rb_class_new_instance(3, icmp_args, cCappPacketICMPHeader));
+}
+
+static void
 capp_make_tcp_header(VALUE headers, const struct tcphdr *header)
 {
     VALUE tcp_args[9];
@@ -372,6 +388,9 @@ capp_make_ipv4_header(VALUE headers, const struct ip *header)
     ip_payload = (char *)header + header->ip_hl * 4;
 
     switch (header->ip_p) {
+    case IPPROTO_ICMP:
+	capp_make_icmp_header(headers, (const struct icmp *)ip_payload);
+	break;
     case IPPROTO_TCP:
 	capp_make_tcp_header(headers, (const struct tcphdr *)ip_payload);
 	break;
@@ -653,6 +672,7 @@ void
 Init_capp(void) {
     id_drop               = rb_intern("drop");
     id_ethernet_header    = rb_intern("ethernet_header");
+    id_icmp_header        = rb_intern("icmp_header");
     id_ifdrop             = rb_intern("ifdrop");
     id_ipv4_header        = rb_intern("ipv4_header");
     id_ivar_device        = rb_intern("@device");
@@ -671,6 +691,8 @@ Init_capp(void) {
 
     cCappPacketEthernetHeader =
 	rb_const_get(cCappPacket, rb_intern("EthernetHeader"));
+    cCappPacketICMPHeader =
+	rb_const_get(cCappPacket, rb_intern("ICMPHeader"));
     cCappPacketIPv4Header =
 	rb_const_get(cCappPacket, rb_intern("IPv4Header"));
     cCappPacketTCPHeader =

@@ -70,6 +70,18 @@ class TestCapp < MiniTest::Unit::TestCase
     assert_equal nil,            header.payload_offset
   end
 
+  def test_icmp4_header
+    capp = Capp.offline ICMP4_DUMP
+
+    packet = capp.loop.first
+
+    header = packet.icmp_header
+
+    assert_equal     3, header.type
+    assert_equal     3, header.code
+    assert_equal 19056, header.checksum
+  end
+
   def test_loop
     capp = Capp.offline ICMP4_DUMP
 

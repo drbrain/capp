@@ -10,6 +10,7 @@ require_header 'arpa/inet.h'
 require_header 'net/ethernet.h'
 require_header 'netinet/in.h'
 require_header 'netinet/ip.h'
+require_header 'netinet/ip_icmp.h'
 require_header 'netinet/tcp.h'
 require_header 'netinet/udp.h'
 
