@@ -29,11 +29,12 @@ class Capp::Packet
   attr_reader :timestamp
   attr_reader :udp_header
 
-  def initialize timestamp, length, capture_length, captured, headers
+  def initialize timestamp, length, capture_length, captured, datalink, headers
     @capture_length = capture_length
     @captured       = captured
     @length         = length
     @timestamp      = timestamp
+    @datalink       = datalink
 
     @ethernet_header = headers[:ethernet_header]
     @icmp_header     = headers[:icmp_header]
@@ -68,7 +69,13 @@ class Capp::Packet
   end
 
   def payload_offset
-    offset = 14
+    offset =
+      case @datalink
+      when Capp::DLT_NULL then
+        4
+      when Capp::DLT_EN10MB then
+        14
+      end
 
     case
     when ipv4? then offset += @ipv4_header.ihl * 4

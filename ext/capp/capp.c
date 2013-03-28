@@ -450,7 +450,7 @@ capp_make_packet(int datalink, const struct pcap_pkthdr *header,
 	const u_char *data)
 {
     VALUE headers = rb_hash_new();
-    VALUE packet_args[5];
+    VALUE packet_args[6];
 
     switch (datalink) {
     case DLT_NULL:
@@ -468,9 +468,10 @@ capp_make_packet(int datalink, const struct pcap_pkthdr *header,
     packet_args[1] = UINT2NUM(header->len);
     packet_args[2] = UINT2NUM(header->caplen);
     packet_args[3] = rb_str_new((const char *)data, header->caplen);
-    packet_args[4] = headers;
+    packet_args[4] = UINT2NUM(datalink);
+    packet_args[5] = headers;
 
-    return rb_class_new_instance(5, packet_args, cCappPacket);
+    return rb_class_new_instance(6, packet_args, cCappPacket);
 }
 
 static void *
@@ -759,5 +760,8 @@ Init_capp(void) {
     rb_define_method(cCapp, "snaplen=", capp_set_snaplen, 1);
     rb_define_method(cCapp, "stats", capp_stats, 0);
     rb_define_method(cCapp, "timeout=", capp_set_timeout, 1);
+
+    rb_define_const(cCapp, "DLT_NULL",   INT2NUM(DLT_NULL));
+    rb_define_const(cCapp, "DLT_EN10MB", INT2NUM(DLT_EN10MB));
 }
 
