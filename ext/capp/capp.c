@@ -14,7 +14,9 @@
 
 #include "extconf.h"
 
-struct capp_packet {
+struct capp_loop_args {
+    pcap_t *handle;
+    int datalink;
     const struct pcap_pkthdr *header;
     const u_char *data;
 };
@@ -26,7 +28,8 @@ static ID id_ethernet_header;
 static ID id_icmp_header;
 static ID id_ifdrop;
 static ID id_ipv4_header;
-static ID id_ivar_device;
+static ID id_iv_datalink;
+static ID id_iv_device;
 static ID id_recv;
 static ID id_type;
 static ID id_tcp_header;
@@ -249,7 +252,7 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
 
     obj = Data_Wrap_Struct(klass, NULL, pcap_close, handle);
 
-    rb_ivar_set(obj, id_ivar_device, device);
+    rb_ivar_set(obj, id_iv_device, device);
 
     return obj;
 }
@@ -302,7 +305,7 @@ capp_s_open_offline(VALUE klass, VALUE file)
 
     obj = Data_Wrap_Struct(klass, NULL, pcap_close, handle);
 
-    rb_ivar_set(obj, id_ivar_device, Qnil);
+    rb_ivar_set(obj, id_iv_device, Qnil);
 
     return obj;
 }
@@ -405,12 +408,11 @@ capp_make_ipv4_header(VALUE headers, const struct ip *header)
 	    rb_class_new_instance(11, ipv4_args, cCappPacketIPv4Header));
 }
 
-static VALUE
-capp_make_packet(const struct pcap_pkthdr *header, const u_char *data)
+static void
+capp_make_packet_ethernet(VALUE headers, const struct pcap_pkthdr *header,
+	const u_char *data)
 {
     VALUE ether_header;
-    VALUE headers = rb_hash_new();
-    VALUE packet_args[5];
     uint16_t ethertype;
 
     capp_make_ethernet_header(headers, (const struct ether_header *)data);
@@ -422,6 +424,23 @@ capp_make_packet(const struct pcap_pkthdr *header, const u_char *data)
     case ETHERTYPE_IP:
 	capp_make_ipv4_header(headers,
 		(const struct ip *)(data + sizeof(struct ether_header)));
+    }
+}
+
+static VALUE
+capp_make_packet(int datalink, const struct pcap_pkthdr *header,
+	const u_char *data)
+{
+    VALUE headers = rb_hash_new();
+    VALUE packet_args[5];
+
+    switch (datalink) {
+    case DLT_EN10MB:
+	capp_make_packet_ethernet(headers, header, data);
+	break;
+    default:
+	rb_raise(rb_eNotImpError, "unknown datalink type %d", datalink);
+	break; /* unreachable */
     }
 
     packet_args[0] = rb_time_new(header->ts.tv_sec, header->ts.tv_usec);
@@ -436,23 +455,23 @@ capp_make_packet(const struct pcap_pkthdr *header, const u_char *data)
 static void *
 capp_loop_callback_with_gvl(void *ptr)
 {
-    struct capp_packet *packet = (struct capp_packet *)ptr;
+    struct capp_loop_args *args = (struct capp_loop_args *)ptr;
 
-    rb_yield(capp_make_packet(packet->header, packet->data));
+    rb_yield(capp_make_packet(args->datalink, args->header, args->data));
 
     return NULL;
 }
 
 static void
-capp_loop_callback(u_char *args, const struct pcap_pkthdr *header,
+capp_loop_callback(u_char *ptr, const struct pcap_pkthdr *header,
 	const u_char *data)
 {
-    struct capp_packet packet;
+    struct capp_loop_args *args = (struct capp_loop_args *)ptr;
 
-    packet.header = header;
-    packet.data = data;
+    args->header = header;
+    args->data   = data;
 
-    rb_thread_call_with_gvl(capp_loop_callback_with_gvl, (void *)&packet);
+    rb_thread_call_with_gvl(capp_loop_callback_with_gvl, (void *)args);
 }
 
 static VALUE
@@ -478,10 +497,10 @@ capp_loop_interrupt(void *ptr)
 static void *
 capp_loop_run_no_gvl(void *ptr)
 {
-    pcap_t *handle = (pcap_t *)ptr;
+    struct capp_loop_args *args = (struct capp_loop_args *)ptr;
     int res;
 
-    res = pcap_loop(handle, -1, capp_loop_callback, NULL);
+    res = pcap_loop(args->handle, -1, capp_loop_callback, (u_char *)ptr);
 
     return (void *)res;
 }
@@ -489,19 +508,20 @@ capp_loop_run_no_gvl(void *ptr)
 static VALUE
 capp_loop_run(VALUE self)
 {
-    VALUE device;
-    pcap_t *handle;
+    struct capp_loop_args args;
     int res;
 
-    device = rb_ivar_get(self, id_ivar_device);
+    GetCapp(self, args.handle);
 
-    GetCapp(self, handle);
+    args.datalink = pcap_datalink(args.handle);
+
+    rb_ivar_set(self, id_iv_datalink, INT2NUM(args.datalink));
 
     res = (int)rb_thread_call_without_gvl(capp_loop_run_no_gvl,
-	    (void *)handle, capp_loop_interrupt, (void *)handle);
+	    (void *)&args, capp_loop_interrupt, (void *)args.handle);
 
     if (res == -1)
-	rb_raise(eCappError, "%s", pcap_geterr(handle));
+	rb_raise(eCappError, "%s", pcap_geterr(args.handle));
 
     return self;
 }
@@ -543,7 +563,7 @@ capp_set_filter(VALUE self, VALUE filter)
     char errbuf[PCAP_ERRBUF_SIZE];
     int res;
 
-    device = rb_ivar_get(self, id_ivar_device);
+    device = rb_ivar_get(self, id_iv_device);
 
     if (RTEST(device)) {
 	*errbuf = '\0';
@@ -677,7 +697,8 @@ Init_capp(void) {
     id_icmp_header        = rb_intern("icmp_header");
     id_ifdrop             = rb_intern("ifdrop");
     id_ipv4_header        = rb_intern("ipv4_header");
-    id_ivar_device        = rb_intern("@device");
+    id_iv_datalink        = rb_intern("@datalink");
+    id_iv_device          = rb_intern("@device");
     id_recv               = rb_intern("recv");
     id_tcp_header         = rb_intern("tcp_header");
     id_type               = rb_intern("type");
