@@ -76,6 +76,7 @@ capp_sockaddr_to_address(struct sockaddr *addr)
 {
     VALUE address, sockaddr_string;
     struct sockaddr_dl *dl;
+    struct ether_addr *ether;
 
     if (NULL == addr)
 	return Qnil;
@@ -90,8 +91,9 @@ capp_sockaddr_to_address(struct sockaddr *addr)
 	return rb_ary_entry(address, 1);
     case AF_LINK:
 	dl = (struct sockaddr_dl *)addr;
+	ether = (struct ether_addr *)LLADDR(dl);
 
-	return rb_str_new(LLADDR(dl), dl->sdl_alen);
+	return rb_str_new2(ether_ntoa(ether));
     }
 
     return sockaddr_string;
