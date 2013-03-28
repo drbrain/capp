@@ -427,6 +427,24 @@ capp_make_packet_ethernet(VALUE headers, const struct pcap_pkthdr *header,
     }
 }
 
+static void
+capp_make_packet_null(VALUE headers, const struct pcap_pkthdr *header,
+	const u_char *data)
+{
+    uint32_t protocol_family = (uint32_t)*data;
+
+    switch (protocol_family) {
+    case PF_INET:
+	capp_make_ipv4_header(headers,
+		(const struct ip *)(data + sizeof(uint32_t)));
+	break;
+    default:
+	rb_raise(rb_eNotImpError, "unknown protocol family %d",
+		protocol_family);
+	break; /* unreachable */
+    }
+}
+
 static VALUE
 capp_make_packet(int datalink, const struct pcap_pkthdr *header,
 	const u_char *data)
@@ -435,6 +453,9 @@ capp_make_packet(int datalink, const struct pcap_pkthdr *header,
     VALUE packet_args[5];
 
     switch (datalink) {
+    case DLT_NULL:
+	capp_make_packet_null(headers, header, data);
+	break;
     case DLT_EN10MB:
 	capp_make_packet_ethernet(headers, header, data);
 	break;
