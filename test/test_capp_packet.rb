@@ -32,7 +32,8 @@ class TestCappPacket < MiniTest::Unit::TestCase
         @CP::UDPHeader.new(64010, 5353, 37, 14921),
     }
 
-    @packet = @CP.new @timestamp, length, length, @captured, @headers
+    @packet =
+      @CP.new @timestamp, length, length, @captured, Capp::DLT_EN10MB, @headers
   end
 
   def test_dump
