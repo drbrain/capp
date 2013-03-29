@@ -2,32 +2,87 @@
 
 class Capp::Packet
 
-  UDP = Socket::IPPROTO_UDP
+  ##
+  # 802.3 Ethernet header
 
   EthernetHeader = Struct.new :destination, :source, :type
 
+  ##
+  # ICMP header.  See RFC 792
+
   ICMPHeader = Struct.new :type, :code, :checksum, :data
+
+  ##
+  # IPv4 header.  See RFC 791
 
   IPv4Header = Struct.new :version, :ihl, :tos, :length,
                           :id, :offset,
                           :ttl, :protocol, :checksum,
                           :source, :destination, :payload_offset
 
+  ##
+  # TCP header.  See RFC 793
+
   TCPHeader = Struct.new :source_port, :destination_port,
                          :seq_number, :ack_number,
                          :offset, :flags, :window, :checksum, :urgent
 
+  ##
+  # UDP header.  See RFC 768
+
   UDPHeader = Struct.new :source_port, :destination_port, :length, :checksum
 
+  ##
+  # Length of packet that was captured
+
   attr_reader :capture_length
+
+  ##
+  # Captured portion of the packet.
+
   attr_reader :captured
+
+  ##
+  # The Ethernet header
+
   attr_reader :ethernet_header
+
+  ##
+  # ICMP header
+
   attr_reader :icmp_header
+
+  ##
+  # IPv4 header
+
   attr_reader :ipv4_header
+
+  ##
+  # Total length of packet
+
   attr_reader :length
+
+  ##
+  # TCP header
+
   attr_reader :tcp_header
+
+  ##
+  # Packet capture timestamp
+
   attr_reader :timestamp
+
+  ##
+  # UDP header
+
   attr_reader :udp_header
+
+  ##
+  # Creates a new packet.  Ordinarily this is performed from Capp#loop.  The
+  # +timestamp+ is the packet capture timestamp, +length+ is the total length
+  # of the packet, +capture_length+ is the number of captured bytes from the
+  # packet.  The +datalink+ is the type of link the packet was captured on.
+  # +headers+ is a Hash of parsed headers.
 
   def initialize timestamp, length, capture_length, captured, datalink, headers
     @capture_length = capture_length
@@ -43,9 +98,17 @@ class Capp::Packet
     @udp_header      = headers[:udp_header]
   end
 
+  ##
+  # Returns the captured bytes with non-printing characters replaced by "."
+
   def dump
     @captured.tr "\000-\037\177-\377", "."
   end
+
+  ##
+  # Dumps the captured packet from +offset+ with offsets, hexadecimal output
+  # for the bytes and the ASCII content with non-printing characters replaced
+  # by "."
 
   def hexdump offset = 0
     data = @captured[offset, @capture_length]
@@ -64,9 +127,18 @@ class Capp::Packet
     end.join "\n"
   end
 
+  ##
+  # The payload of the packet.  For a UDP packet captured from an Ethernet
+  # interface this is payload after the Ethernet, IP and UDP headers.  For a
+  # TCP packet captured from a loopback interface, this is the payload after
+  # the protocol family, IP and TCP headers.
+
   def payload
     @captured[payload_offset, @capture_length]
   end
+
+  ##
+  # The offset into the captured data where the payload starts.
 
   def payload_offset
     offset =
@@ -91,13 +163,22 @@ class Capp::Packet
     offset
   end
 
+  ##
+  # Is this an IPv4 packet?
+
   def ipv4?
     @ipv4_header
   end
 
+  ##
+  # Is this a TCP packet?
+
   def tcp?
     @tcp_header
   end
+
+  ##
+  # Is this a UDP packet?
 
   def udp?
     @udp_header

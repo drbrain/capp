@@ -761,7 +761,16 @@ Init_capp(void) {
     rb_define_method(cCapp, "stats", capp_stats, 0);
     rb_define_method(cCapp, "timeout=", capp_set_timeout, 1);
 
+    /* Document-const: DLT_NULL
+     *
+     * BSD loopback encapsulation.
+     */
     rb_define_const(cCapp, "DLT_NULL",   INT2NUM(DLT_NULL));
+
+    /* Document-const: DLT_EN10MB
+     *
+     * Ethernet encapsulation.
+     */
     rb_define_const(cCapp, "DLT_EN10MB", INT2NUM(DLT_EN10MB));
 }
 
