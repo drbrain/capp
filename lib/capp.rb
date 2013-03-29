@@ -62,6 +62,20 @@ class Capp
 
   attr_reader :device
 
+  ##
+  # Opens +device_or_file+ as an offline device it it is an IO or an existing
+  # file.
+  #
+  # Opens +device_or_file+ as a live device otherwise, along with +args+.
+
+  def self.open device_or_file, *args
+    if IO === device_or_file or File.exist? device_or_file then
+      offline device_or_file, *args
+    else
+      live device_or_file, *args
+    end
+  end
+
 end
 
 require 'capp/packet'

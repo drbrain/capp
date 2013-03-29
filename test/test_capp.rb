@@ -2,7 +2,7 @@ require 'minitest/autorun'
 require 'capp'
 
 class TestCapp < MiniTest::Unit::TestCase
-  
+
   ICMP4_DUMP = File.expand_path '../icmp4.pcap', __FILE__
   TCP4_DUMP  = File.expand_path '../tcp4.pcap',  __FILE__
   UDP4_DUMP  = File.expand_path '../udp4.pcap',  __FILE__
@@ -17,6 +17,20 @@ class TestCapp < MiniTest::Unit::TestCase
 
   def test_class_offline_filename
     capp = Capp.offline ICMP4_DUMP
+
+    assert capp.loop.first
+  end
+
+  def test_class_open_file
+    open ICMP4_DUMP do |io|
+      capp = Capp.open io
+
+      assert capp.loop.first
+    end
+  end
+
+  def test_class_open_filename
+    capp = Capp.open ICMP4_DUMP
 
     assert capp.loop.first
   end
