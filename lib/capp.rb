@@ -60,6 +60,14 @@ class Capp
 
   Device  = Struct.new :name, :description, :addresses, :flags
 
+  ##
+  # Datalink type for the Capp
+
+  attr_reader :datalink
+
+  ##
+  # Device name for the Capp, so long as it is live
+
   attr_reader :device
 
   ##
