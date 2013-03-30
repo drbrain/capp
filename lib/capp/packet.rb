@@ -127,7 +127,7 @@ class Capp::Packet
       end.destination.dup
 
     begin
-      destination = resolver.getname destination
+      destination = resolver.getname(destination).dup
     rescue Resolv::ResolvError
     end if resolver
 
@@ -222,7 +222,7 @@ class Capp::Packet
       end.source.dup
 
     begin
-      source = resolver.getname source
+      source = resolver.getname(source).dup
     rescue Resolv::ResolvError
     end if resolver
 
