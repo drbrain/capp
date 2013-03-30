@@ -38,6 +38,11 @@ class TestCappPacket < MiniTest::Unit::TestCase
       @CP.new @timestamp, length, length, @captured, Capp::DLT_EN10MB, @headers
   end
 
+  def test_destination
+    assert_equal '224.0.0.251.5353', @packet.destination
+    assert_equal '224.0.0.251.5353', @packet.destination
+  end
+
   def test_destination_resolver
     assert_equal 'mdns.mcast.net.5353', @packet.destination(resolver)
 
@@ -99,6 +104,11 @@ class TestCappPacket < MiniTest::Unit::TestCase
     refute @packet.ipv6?
   end
 
+  def test_source
+    assert_equal '10.101.28.77.64010', @packet.source
+    assert_equal '10.101.28.77.64010', @packet.source
+  end
+
   def test_source_resolver
     assert_equal 'kault.64010', @packet.source(resolver)
 
@@ -120,7 +130,7 @@ class TestCappPacket < MiniTest::Unit::TestCase
   end
 
   def resolver
-    io = Tempfile.open 'hosts' do |io|
+    Tempfile.open 'hosts' do |io|
       io.puts '224.0.0.251 mdns.mcast.net'
       io.puts '10.101.28.77 kault'
       io.flush

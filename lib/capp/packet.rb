@@ -124,7 +124,7 @@ class Capp::Packet
         @ipv6_header
       else
         raise NotImplementedError
-      end.destination
+      end.destination.dup
 
     begin
       destination = resolver.getname destination
@@ -219,7 +219,7 @@ class Capp::Packet
         @ipv6_header
       else
         raise NotImplementedError
-      end.source
+      end.source.dup
 
     begin
       source = resolver.getname source
