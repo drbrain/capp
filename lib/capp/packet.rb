@@ -125,9 +125,9 @@ class Capp::Packet
       end.destination
 
     if tcp? then
-      destination << ":#{@tcp_header.destination_port}"
+      destination << ".#{@tcp_header.destination_port}"
     elsif udp? then
-      destination << ":#{@udp_header.destination_port}"
+      destination << ".#{@udp_header.destination_port}"
     end
 
     destination
@@ -213,9 +213,9 @@ class Capp::Packet
       end.source
 
     if tcp? then
-      source << ":#{@tcp_header.source_port}"
+      source << ".#{@tcp_header.source_port}"
     elsif udp? then
-      source << ":#{@udp_header.source_port}"
+      source << ".#{@udp_header.source_port}"
     end
 
     source

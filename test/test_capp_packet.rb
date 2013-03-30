@@ -37,7 +37,7 @@ class TestCappPacket < MiniTest::Unit::TestCase
   end
 
   def test_destination_udp4
-    assert_equal '224.0.0.251:5353', @packet.destination
+    assert_equal '224.0.0.251.5353', @packet.destination
   end
 
   def test_dump
@@ -90,7 +90,7 @@ class TestCappPacket < MiniTest::Unit::TestCase
   end
 
   def test_source_udp4
-    assert_equal '10.101.28.77:64010', @packet.source
+    assert_equal '10.101.28.77.64010', @packet.source
   end
 
   def test_udp_eh
