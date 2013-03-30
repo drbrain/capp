@@ -148,6 +148,20 @@ class TestCapp < MiniTest::Unit::TestCase
     end
   end
 
+  def test_stop
+    capp = Capp.offline ICMP4_DUMP
+
+    packets = []
+
+    capp.loop do |packet|
+      packets << packet
+
+      capp.stop
+    end
+
+    assert_equal 1, packets.size
+  end
+
   def test_tcp4_header
     capp = Capp.offline TCP4_DUMP
 

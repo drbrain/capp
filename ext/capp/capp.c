@@ -774,6 +774,24 @@ capp_stats(VALUE self)
     return stats;
 }
 
+/*
+ * call-seq:
+ *   capp.stop -> capp
+ *
+ * Stops a running loop
+ */
+static VALUE
+capp_stop(VALUE self)
+{
+    pcap_t *handle;
+
+    GetCapp(self, handle);
+
+    pcap_breakloop(handle);
+
+    return self;
+}
+
 void
 Init_capp(void) {
     id_drop               = rb_intern("drop");
@@ -824,6 +842,7 @@ Init_capp(void) {
     rb_define_method(cCapp, "promiscuous=", capp_set_promisc, 1);
     rb_define_method(cCapp, "snaplen=", capp_set_snaplen, 1);
     rb_define_method(cCapp, "stats", capp_stats, 0);
+    rb_define_method(cCapp, "stop", capp_stop, 0);
     rb_define_method(cCapp, "timeout=", capp_set_timeout, 1);
 
     /* Document-const: DLT_NULL
