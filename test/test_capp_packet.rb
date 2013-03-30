@@ -27,7 +27,7 @@ class TestCappPacket < MiniTest::Unit::TestCase
                                 0x0800),
       ipv4_header:
         @CP::IPv4Header.new(4, 5, 0, 57, 61330, 0, 0, 1, 17, 49780,
-                            0x0a_65_1c_4d, 0xe0_00_00_fb),
+                            '10.101.28.77', '224.0.0.251'),
       udp_header:
         @CP::UDPHeader.new(64010, 5353, 37, 14921),
     }
