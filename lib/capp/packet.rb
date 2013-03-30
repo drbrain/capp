@@ -186,7 +186,7 @@ class Capp::Packet
 
     case
     when ipv4? then offset += @ipv4_header.ihl * 4
-    when ipv6? then 40
+    when ipv6? then offset += 40
     else            raise NotImplementedError
     end
 
