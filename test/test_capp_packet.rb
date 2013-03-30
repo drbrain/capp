@@ -26,7 +26,7 @@ class TestCappPacket < MiniTest::Unit::TestCase
         @CP::EthernetHeader.new(0x01_00_5e_00_00_fb, 0x20_c9_d0_48_eb_73,
                                 0x0800),
       ipv4_header:
-        @CP::IPv4Header.new(4, 5, 0, 57, 61330, 0, 0, 1, 17, 49780,
+        @CP::IPv4Header.new(4, 5, 0, 57, 61330, 0, 1, 17, 49780,
                             '10.101.28.77', '224.0.0.251'),
       udp_header:
         @CP::UDPHeader.new(64010, 5353, 37, 14921),
@@ -34,6 +34,10 @@ class TestCappPacket < MiniTest::Unit::TestCase
 
     @packet =
       @CP.new @timestamp, length, length, @captured, Capp::DLT_EN10MB, @headers
+  end
+
+  def test_destination_udp4
+    assert_equal '224.0.0.251:5353', @packet.destination
   end
 
   def test_dump
@@ -83,6 +87,10 @@ class TestCappPacket < MiniTest::Unit::TestCase
 
   def test_ipv6_eh
     refute @packet.ipv6?
+  end
+
+  def test_source_udp4
+    assert_equal '10.101.28.77:64010', @packet.source
   end
 
   def test_udp_eh

@@ -112,6 +112,28 @@ class Capp::Packet
   end
 
   ##
+  # Returns the destination of the packet regardless of protocol
+
+  def destination
+    destination =
+      if ipv4? then
+        @ipv4_header
+      elsif ipv6? then
+        @ipv6_header
+      else
+        raise NotImplementedError
+      end.destination
+
+    if tcp? then
+      destination << ":#{@tcp_header.destination_port}"
+    elsif udp? then
+      destination << ":#{@udp_header.destination_port}"
+    end
+
+    destination
+  end
+
+  ##
   # Returns the captured bytes with non-printing characters replaced by "."
 
   def dump
@@ -174,6 +196,28 @@ class Capp::Packet
     end
 
     offset
+  end
+
+  ##
+  # Returns the source of the packet regardless of protocol
+
+  def source
+    source =
+      if ipv4? then
+        @ipv4_header
+      elsif ipv6? then
+        @ipv6_header
+      else
+        raise NotImplementedError
+      end.source
+
+    if tcp? then
+      source << ":#{@tcp_header.source_port}"
+    elsif udp? then
+      source << ":#{@udp_header.source_port}"
+    end
+
+    source
   end
 
   ##
