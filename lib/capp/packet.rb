@@ -113,8 +113,10 @@ class Capp::Packet
 
   ##
   # Returns the destination of the packet regardless of protocol
+  #
+  # If a Resolv-compatible +resolver+ is given the name will be looked up.
 
-  def destination
+  def destination resolver = nil
     destination =
       if ipv4? then
         @ipv4_header
@@ -123,6 +125,11 @@ class Capp::Packet
       else
         raise NotImplementedError
       end.destination
+
+    begin
+      destination = resolver.getname destination
+    rescue Resolv::ResolvError
+    end if resolver
 
     if tcp? then
       destination << ".#{@tcp_header.destination_port}"
@@ -200,9 +207,11 @@ class Capp::Packet
   end
 
   ##
-  # Returns the source of the packet regardless of protocol
+  # Returns the source of the packet regardless of protocol.
+  #
+  # If a Resolv-compatible +resolver+ is given the name will be looked up.
 
-  def source
+  def source resolver = nil
     source =
       if ipv4? then
         @ipv4_header
@@ -211,6 +220,11 @@ class Capp::Packet
       else
         raise NotImplementedError
       end.source
+
+    begin
+      source = resolver.getname source
+    rescue Resolv::ResolvError
+    end if resolver
 
     if tcp? then
       source << ".#{@tcp_header.source_port}"

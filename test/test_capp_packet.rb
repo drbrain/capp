@@ -2,6 +2,8 @@
 
 require 'minitest/autorun'
 require 'capp'
+require 'resolv'
+require 'tempfile'
 
 class TestCappPacket < MiniTest::Unit::TestCase
 
@@ -34,6 +36,14 @@ class TestCappPacket < MiniTest::Unit::TestCase
 
     @packet =
       @CP.new @timestamp, length, length, @captured, Capp::DLT_EN10MB, @headers
+  end
+
+  def test_destination_resolver
+    assert_equal 'mdns.mcast.net.5353', @packet.destination(resolver)
+
+    @packet.ipv4_header.destination = '192.0.2.1'
+
+    assert_equal '192.0.2.1.5353', @packet.destination(resolver)
   end
 
   def test_destination_udp4
@@ -89,6 +99,14 @@ class TestCappPacket < MiniTest::Unit::TestCase
     refute @packet.ipv6?
   end
 
+  def test_source_resolver
+    assert_equal 'kault.64010', @packet.source(resolver)
+
+    @packet.ipv4_header.source = '192.0.2.1'
+
+    assert_equal '192.0.2.1.64010', @packet.source(resolver)
+  end
+
   def test_source_udp4
     assert_equal '10.101.28.77.64010', @packet.source
   end
@@ -99,6 +117,18 @@ class TestCappPacket < MiniTest::Unit::TestCase
 
   def dump str
     str.tr "\000-\037\177-\377", "."
+  end
+
+  def resolver
+    io = Tempfile.open 'hosts' do |io|
+      io.puts '224.0.0.251 mdns.mcast.net'
+      io.puts '10.101.28.77 kault'
+      io.flush
+
+      resolver = Resolv::Hosts.new io.path
+      resolver.getname '224.0.0.251' # initialize
+      resolver
+    end
   end
 
 end
