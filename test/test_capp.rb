@@ -86,6 +86,23 @@ class TestCapp < MiniTest::Unit::TestCase
     assert_equal nil,            header.payload_offset
   end
 
+  def test_ipv6_header
+    capp = Capp.offline ICMP6_DUMP
+
+    packet = capp.loop.first
+
+    header = packet.ipv6_header
+
+    assert_equal                   6, header.version
+    assert_equal                   0, header.traffic_class
+    assert_equal          1610612736, header.flow_label
+    assert_equal                  24, header.payload_length
+    assert_equal                  58, header.next_header
+    assert_equal                 255, header.hop_limit
+    assert_equal                '::', header.source
+    assert_equal 'ff02::1:ff48:eb73', header.destination
+  end
+
   def test_icmp4_header
     capp = Capp.offline ICMP4_DUMP
 

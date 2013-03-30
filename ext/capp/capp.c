@@ -412,7 +412,8 @@ capp_make_ipv4_header(VALUE headers, const struct ip *header)
 }
 
 static VALUE
-capp_make_ipv6_addr(struct in6_addr addr) {
+capp_make_ipv6_addr(struct in6_addr addr)
+{
     char buf[INET6_ADDRSTRLEN];
     const char *ptr;
 
