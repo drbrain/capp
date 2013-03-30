@@ -18,7 +18,7 @@ class Capp::Packet
   IPv4Header = Struct.new :version, :ihl, :tos, :length,
                           :id, :offset,
                           :ttl, :protocol, :checksum,
-                          :source, :destination, :payload_offset
+                          :source, :destination
   ##
   # IPv6 header.  See RFC 2460
 
@@ -186,6 +186,7 @@ class Capp::Packet
 
     case
     when ipv4? then offset += @ipv4_header.ihl * 4
+    when ipv6? then 40
     else            raise NotImplementedError
     end
 

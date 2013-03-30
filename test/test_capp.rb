@@ -83,7 +83,6 @@ class TestCapp < MiniTest::Unit::TestCase
     assert_equal 36729,          header.checksum
     assert_equal '10.101.28.65', header.source
     assert_equal '10.101.28.77', header.destination
-    assert_equal nil,            header.payload_offset
   end
 
   def test_ipv6_header
