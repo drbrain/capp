@@ -19,6 +19,13 @@ class Capp::Packet
                           :id, :offset,
                           :ttl, :protocol, :checksum,
                           :source, :destination, :payload_offset
+  ##
+  # IPv6 header.  See RFC 2460
+
+  IPv6Header = Struct.new :version, :traffic_class, :flow_label,
+                          :payload_length, :next_header, :hop_limit,
+                          :source, :destination
+
 
   ##
   # TCP header.  See RFC 793
@@ -58,6 +65,11 @@ class Capp::Packet
   attr_reader :ipv4_header
 
   ##
+  # IPv6 header
+
+  attr_reader :ipv6_header
+
+  ##
   # Total length of packet
 
   attr_reader :length
@@ -94,6 +106,7 @@ class Capp::Packet
     @ethernet_header = headers[:ethernet_header]
     @icmp_header     = headers[:icmp_header]
     @ipv4_header     = headers[:ipv4_header]
+    @ipv6_header     = headers[:ipv6_header]
     @tcp_header      = headers[:tcp_header]
     @udp_header      = headers[:udp_header]
   end
@@ -168,6 +181,13 @@ class Capp::Packet
 
   def ipv4?
     @ipv4_header
+  end
+
+  ##
+  # Is this an IPv6 packet?
+
+  def ipv6?
+    @ipv6_header
   end
 
   ##

@@ -4,6 +4,7 @@
 #include <net/ethernet.h>
 #include <net/if_dl.h>
 #include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
@@ -28,6 +29,7 @@ static ID id_ethernet_header;
 static ID id_icmp_header;
 static ID id_ifdrop;
 static ID id_ipv4_header;
+static ID id_ipv6_header;
 static ID id_iv_datalink;
 static ID id_iv_device;
 static ID id_recv;
@@ -43,6 +45,7 @@ static VALUE cCappPacket;
 static VALUE cCappPacketEthernetHeader;
 static VALUE cCappPacketICMPHeader;
 static VALUE cCappPacketIPv4Header;
+static VALUE cCappPacketIPv6Header;
 static VALUE cCappPacketTCPHeader;
 static VALUE cCappPacketUDPHeader;
 static VALUE cSocket;
@@ -408,6 +411,53 @@ capp_make_ipv4_header(VALUE headers, const struct ip *header)
 	    rb_class_new_instance(11, ipv4_args, cCappPacketIPv4Header));
 }
 
+static VALUE
+capp_make_ipv6_addr(struct in6_addr addr) {
+    char buf[INET6_ADDRSTRLEN];
+    const char *ptr;
+
+    ptr = inet_ntop(AF_INET6, &addr, buf, sizeof(buf));
+
+    if (!ptr)
+	rb_sys_fail("inet_ntop");
+
+    return rb_usascii_str_new_cstr(ptr);
+}
+
+static void
+capp_make_ipv6_header(VALUE headers, const struct ip6_hdr *header)
+{
+    const char * ip_payload;
+    VALUE ipv6_args[8];
+
+    ipv6_args[0] = UINT2NUM(6);
+    ipv6_args[1] = UINT2NUM((header->ip6_flow >> 20) & 0xff);
+    ipv6_args[2] = UINT2NUM(ntohl(header->ip6_flow & 0xfffff));
+    ipv6_args[3] = UINT2NUM(ntohs(header->ip6_plen));
+    ipv6_args[4] = UINT2NUM(header->ip6_nxt);
+    ipv6_args[5] = UINT2NUM(header->ip6_hlim);
+    ipv6_args[6] = capp_make_ipv6_addr(header->ip6_src);
+    ipv6_args[7] = capp_make_ipv6_addr(header->ip6_dst);
+
+    ip_payload = (char *)header + sizeof(struct ip6_hdr);
+
+    switch (header->ip6_nxt) {
+    case IPPROTO_ICMP:
+    case IPPROTO_ICMPV6:
+	capp_make_icmp_header(headers, (const struct icmp *)ip_payload);
+	break;
+    case IPPROTO_TCP:
+	capp_make_tcp_header(headers, (const struct tcphdr *)ip_payload);
+	break;
+    case IPPROTO_UDP:
+	capp_make_udp_header(headers, (const struct udphdr *)ip_payload);
+	break;
+    }
+
+    rb_hash_aset(headers, ID2SYM(id_ipv6_header),
+	    rb_class_new_instance(8, ipv6_args, cCappPacketIPv6Header));
+}
+
 static void
 capp_make_packet_ethernet(VALUE headers, const struct pcap_pkthdr *header,
 	const u_char *data)
@@ -424,6 +474,13 @@ capp_make_packet_ethernet(VALUE headers, const struct pcap_pkthdr *header,
     case ETHERTYPE_IP:
 	capp_make_ipv4_header(headers,
 		(const struct ip *)(data + sizeof(struct ether_header)));
+	break;
+    case ETHERTYPE_IPV6:
+	capp_make_ipv6_header(headers,
+		(const struct ip6_hdr *)(data + sizeof(struct ether_header)));
+	break;
+    default:
+	rb_raise(rb_eNotImpError, "unknown ethertype %x", ethertype);
     }
 }
 
@@ -719,6 +776,7 @@ Init_capp(void) {
     id_icmp_header        = rb_intern("icmp_header");
     id_ifdrop             = rb_intern("ifdrop");
     id_ipv4_header        = rb_intern("ipv4_header");
+    id_ipv6_header        = rb_intern("ipv6_header");
     id_iv_datalink        = rb_intern("@datalink");
     id_iv_device          = rb_intern("@device");
     id_recv               = rb_intern("recv");
@@ -740,6 +798,8 @@ Init_capp(void) {
 	rb_const_get(cCappPacket, rb_intern("ICMPHeader"));
     cCappPacketIPv4Header =
 	rb_const_get(cCappPacket, rb_intern("IPv4Header"));
+    cCappPacketIPv6Header =
+	rb_const_get(cCappPacket, rb_intern("IPv6Header"));
     cCappPacketTCPHeader =
 	rb_const_get(cCappPacket, rb_intern("TCPHeader"));
     cCappPacketUDPHeader =

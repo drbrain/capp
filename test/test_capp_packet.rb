@@ -81,6 +81,10 @@ class TestCappPacket < MiniTest::Unit::TestCase
     assert @packet.ipv4?
   end
 
+  def test_ipv6_eh
+    refute @packet.ipv6?
+  end
+
   def test_udp_eh
     assert @packet.udp?
   end

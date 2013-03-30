@@ -7,6 +7,8 @@ class TestCapp < MiniTest::Unit::TestCase
   TCP4_DUMP  = File.expand_path '../tcp4.pcap',  __FILE__
   UDP4_DUMP  = File.expand_path '../udp4.pcap',  __FILE__
 
+  ICMP6_DUMP = File.expand_path '../icmp6.pcap', __FILE__
+
   def test_class_offline_file
     open ICMP4_DUMP do |io|
       capp = Capp.offline io
@@ -94,6 +96,18 @@ class TestCapp < MiniTest::Unit::TestCase
     assert_equal     3, header.type
     assert_equal     3, header.code
     assert_equal 19056, header.checksum
+  end
+
+  def test_icmp6_header
+    capp = Capp.offline ICMP6_DUMP
+
+    packet = capp.loop.first
+
+    header = packet.icmp_header
+
+    assert_equal   135, header.type
+    assert_equal     0, header.code
+    assert_equal 45797, header.checksum
   end
 
   def test_loop
