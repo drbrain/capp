@@ -496,6 +496,10 @@ capp_make_packet_null(VALUE headers, const struct pcap_pkthdr *header,
 	capp_make_ipv4_header(headers,
 		(const struct ip *)(data + sizeof(uint32_t)));
 	break;
+    case PF_INET6:
+	capp_make_ipv6_header(headers,
+		(const struct ip6_hdr *)(data + sizeof(uint32_t)));
+	break;
     default:
 	rb_raise(rb_eNotImpError, "unknown protocol family %d",
 		protocol_family);
