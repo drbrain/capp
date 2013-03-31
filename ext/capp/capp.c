@@ -669,7 +669,11 @@ capp_set_filter(VALUE self, VALUE filter)
     if (res)
 	rb_raise(eCappError, "%s", pcap_geterr(handle));
 
-    if (pcap_setfilter(handle, &program))
+    res = pcap_setfilter(handle, &program);
+
+    pcap_freecode(&program);
+
+    if (res)
 	rb_raise(eCappError, "%s", pcap_geterr(handle));
 
     return self;
