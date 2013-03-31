@@ -19,6 +19,16 @@ require 'socket'
 #
 # To stop capturing packets return from the loop.
 #
+# If #loop is running in a separate thread call #stop on the Capp instance.
+# You can resume capturing packets by calling #loop again after #stop.
+#
+# To set a filter for only udp port 7647 (Rinda::RingFinger packets):
+#
+#   capp.filter = 'udp port 7647'
+#
+# The format for a filter rule is the same as for tcpdump(1).  See
+# pcap-filter(7) for the filter syntax.
+#
 # You can use a Queue to capture packets in one thread and process them in
 # another:
 #
