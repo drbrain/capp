@@ -632,7 +632,7 @@ capp_loop(VALUE self)
 
 /*
  * call-seq:
- *   capp.filter filter -> self
+ *   capp.filter = filter -> self
  *
  * Sets the packet filter to the given +filter+ string.  The format is the
  * same format as tcpdump(1).  You can see the syntax at pcap-filter(7).
