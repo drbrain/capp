@@ -109,11 +109,12 @@ static VALUE
 capp_addr_to_addresses(pcap_addr_t *addrs)
 {
     VALUE address, addresses, addr_args[4];
+    pcap_addr_t *addr;
 
     addresses = rb_ary_new();
 
     if (addrs) {
-	for (pcap_addr_t *addr = addrs; addr; addr = addr->next) {
+	for (addr = addrs; addr; addr = addr->next) {
 	    addr_args[0] = capp_sockaddr_to_address(addr->addr);
 	    addr_args[1] = capp_sockaddr_to_address(addr->netmask);
 	    addr_args[2] = capp_sockaddr_to_address(addr->broadaddr);
@@ -167,7 +168,7 @@ capp_s_devices(VALUE klass)
 {
     VALUE device, devices, dev_args[4];
     char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_if_t *ifaces;
+    pcap_if_t *iface, *ifaces;
 
     *errbuf = '\0';
 
@@ -179,7 +180,7 @@ capp_s_devices(VALUE klass)
 
     devices = rb_ary_new();
 
-    for (pcap_if_t *iface = ifaces; iface; iface = iface->next) {
+    for (iface = ifaces; iface; iface = iface->next) {
 	dev_args[0] = rb_usascii_str_new_cstr(iface->name);
 	if (iface->description) {
 	    dev_args[1] = rb_usascii_str_new_cstr(iface->description);
