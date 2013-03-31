@@ -5,7 +5,8 @@ require 'hoe'
 begin
   require 'rake/extensiontask'
 rescue LoadError => e
-  warn "missing #{e.path} (for rake-compiler)"
+  warn "\nmissing #{e.path} (for rake-compiler)"
+  warn "run: rake newb\n\n"
 end
 
 Hoe.plugin :git
@@ -24,10 +25,12 @@ HOE = Hoe.spec 'capp' do
   self.extra_dev_deps << ['rake-compiler', '~> 0.8']
 end
 
-Rake::ExtensionTask.new 'capp', HOE.spec do |ext|
-  ext.lib_dir = 'lib/capp'
-end
+if Rake.const_defined? :ExtensionTask then
+  Rake::ExtensionTask.new 'capp', HOE.spec do |ext|
+    ext.lib_dir = 'lib/capp'
+  end
 
-task test: :compile
+  task test: :compile
+end
 
 # vim: syntax=ruby
