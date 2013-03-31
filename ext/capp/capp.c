@@ -587,7 +587,7 @@ capp_loop_run_no_gvl(void *ptr)
 
     res = pcap_loop(args->handle, -1, capp_loop_callback, (u_char *)ptr);
 
-    return (void *)res;
+    return (void *)(intptr_t)res;
 }
 
 static VALUE
@@ -602,7 +602,7 @@ capp_loop_run(VALUE self)
 
     rb_ivar_set(self, id_iv_datalink, INT2NUM(args.datalink));
 
-    res = (int)rb_thread_call_without_gvl(capp_loop_run_no_gvl,
+    res = (int)(intptr_t)rb_thread_call_without_gvl(capp_loop_run_no_gvl,
 	    (void *)&args, capp_loop_interrupt, (void *)args.handle);
 
     if (res == -1)
