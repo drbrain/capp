@@ -461,8 +461,7 @@ capp_make_ipv6_header(VALUE headers, const struct ip6_hdr *header)
 }
 
 static void
-capp_make_packet_ethernet(VALUE headers, const struct pcap_pkthdr *header,
-	const u_char *data)
+capp_make_packet_ethernet(VALUE headers, const u_char *data)
 {
     VALUE ether_header;
     uint16_t ethertype;
@@ -487,8 +486,7 @@ capp_make_packet_ethernet(VALUE headers, const struct pcap_pkthdr *header,
 }
 
 static void
-capp_make_packet_null(VALUE headers, const struct pcap_pkthdr *header,
-	const u_char *data)
+capp_make_packet_null(VALUE headers, const u_char *data)
 {
     uint32_t protocol_family = (uint32_t)*data;
 
@@ -517,10 +515,10 @@ capp_make_packet(int datalink, const struct pcap_pkthdr *header,
 
     switch (datalink) {
     case DLT_NULL:
-	capp_make_packet_null(headers, header, data);
+	capp_make_packet_null(headers, data);
 	break;
     case DLT_EN10MB:
-	capp_make_packet_ethernet(headers, header, data);
+	capp_make_packet_ethernet(headers, data);
 	break;
     default:
 	rb_raise(rb_eNotImpError, "unknown datalink type %d", datalink);
