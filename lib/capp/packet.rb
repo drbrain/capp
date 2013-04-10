@@ -32,7 +32,40 @@ class Capp::Packet
 
   TCPHeader = Struct.new :source_port, :destination_port,
                          :seq_number, :ack_number,
-                         :offset, :flags, :window, :checksum, :urgent
+                         :offset, :flags, :window, :checksum, :urgent do
+    def ack?
+      Capp::TCP_ACK == flags & Capp::TCP_ACK
+    end
+
+    def cwr?
+      Capp::TCP_CWR == flags & Capp::TCP_CWR
+    end
+
+    def ece?
+      Capp::TCP_ECE == flags & Capp::TCP_ECE
+    end
+
+    def fin?
+      Capp::TCP_FIN == flags & Capp::TCP_FIN
+    end
+
+    def push?
+      Capp::TCP_PUSH == flags & Capp::TCP_PUSH
+    end
+
+    def rst?
+      Capp::TCP_RST == flags & Capp::TCP_RST
+    end
+
+    def syn?
+      Capp::TCP_SYN == flags & Capp::TCP_SYN
+    end
+
+    def urg?
+      Capp::TCP_URG == flags & Capp::TCP_URG
+    end
+
+  end
 
   ##
   # UDP header.  See RFC 768

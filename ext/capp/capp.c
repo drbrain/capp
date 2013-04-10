@@ -859,5 +859,53 @@ Init_capp(void) {
      * Ethernet encapsulation.
      */
     rb_define_const(cCapp, "DLT_EN10MB", INT2NUM(DLT_EN10MB));
+
+    /* Document-const: TCP_ACK
+     *
+     * TCP Acknowledged flag
+     */
+    rb_define_const(cCapp, "TCP_ACK", INT2NUM(TH_ACK));
+
+    /* Document-const: TCP_CWR
+     *
+     * TCP Congestion Window Reduced flag
+     */
+    rb_define_const(cCapp, "TCP_CWR", INT2NUM(TH_CWR));
+
+    /* Document-const: TCP_ECE
+     *
+     * TCP ECN echo flag
+     */
+    rb_define_const(cCapp, "TCP_ECE", INT2NUM(TH_ECE));
+
+    /* Document-const: TCP_FIN
+     *
+     * TCP Finish flag
+     */
+    rb_define_const(cCapp, "TCP_FIN", INT2NUM(TH_FIN));
+
+    /* Document-const: TCP_PUSH
+     *
+     * TCP Push flag
+     */
+    rb_define_const(cCapp, "TCP_PUSH", INT2NUM(TH_PUSH));
+
+    /* Document-const: TCP_RST
+     *
+     * TCP Reset flag
+     */
+    rb_define_const(cCapp, "TCP_RST", INT2NUM(TH_RST));
+
+    /* Document-const: TCP_SYN
+     *
+     * TCP Synchronize flag
+     */
+    rb_define_const(cCapp, "TCP_SYN", INT2NUM(TH_SYN));
+
+    /* Document-const: TCP_URG
+     *
+     * TCP Urgent flag
+     */
+    rb_define_const(cCapp, "TCP_URG", INT2NUM(TH_URG));
 }
 

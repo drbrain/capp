@@ -12,4 +12,5 @@ test/icmp6.pcap
 test/tcp4.pcap
 test/test_capp.rb
 test/test_capp_packet.rb
+test/test_capp_packet_tcp_header.rb
 test/udp4.pcap
