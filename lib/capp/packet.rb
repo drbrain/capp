@@ -98,9 +98,10 @@ class Capp::Packet
   attr_reader :ethernet_header
 
   ##
-  # Header types in the packet
+  # Array of protocol names in this packet.  This list is ordered from lowest
+  # to highest level.
 
-  attr_reader :header_types
+  attr_reader :protocols
 
   ##
   # ICMP header
@@ -147,11 +148,10 @@ class Capp::Packet
   def initialize timestamp, length, capture_length, captured, datalink, headers
     @capture_length = capture_length
     @captured       = captured
-    @length         = length
-    @timestamp      = timestamp
     @datalink       = datalink
-
-    @header_types    = headers.keys
+    @length         = length
+    @protocols      = headers.keys
+    @timestamp      = timestamp
 
     @arp_header      = headers[:arp]
     @ethernet_header = headers[:ethernet]

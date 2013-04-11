@@ -68,10 +68,6 @@ class TestCappPacket < MiniTest::Unit::TestCase
     assert_equal 0x0800,              header.type,        'type'
   end
 
-  def test_header_types
-    assert_equal [:ethernet, :ipv4, :udp], @packet.header_types
-  end
-
   def test_hexdump
     expected = <<-EXPECTED
 \t0x0000:  0100 5e00 00fb 20c9 d048 eb73 0800 4500  ..^... ..H.s..E.
@@ -106,6 +102,10 @@ class TestCappPacket < MiniTest::Unit::TestCase
 
   def test_ipv6_eh
     refute @packet.ipv6?
+  end
+
+  def test_protocols
+    assert_equal [:ethernet, :ipv4, :udp], @packet.protocols
   end
 
   def test_source
