@@ -543,7 +543,10 @@ capp_make_packet_ethernet(VALUE headers, const u_char *data)
 		(const struct arphdr *)(data + sizeof(struct ether_header)));
 	break;
     default:
-	rb_raise(rb_eNotImpError, "unknown ethertype %x", ethertype);
+	if (ethertype > ETHERMTU)
+	    rb_raise(rb_eNotImpError, "unknown ethertype %04x", ethertype);
+
+	/* otherwise probably an LLC frame which we ignore, see tcpdump */
     }
 }
 
