@@ -1,13 +1,15 @@
 #include <pcap/pcap.h>
+
 #include <arpa/inet.h>
-#include <sys/socket.h>
 #include <net/ethernet.h>
+#include <net/if_arp.h>
 #include <net/if_dl.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <sys/socket.h>
 
 #include <ruby.h>
 #include <ruby/io.h>
@@ -24,6 +26,7 @@ struct capp_loop_args {
 
 #define GetCapp(obj, capp) Data_Get_Struct(obj, pcap_t, capp)
 
+static ID id_arp_header;
 static ID id_drop;
 static ID id_ethernet_header;
 static ID id_icmp_header;
@@ -42,6 +45,7 @@ static VALUE cCapp;
 static VALUE cCappAddress;
 static VALUE cCappDevice;
 static VALUE cCappPacket;
+static VALUE cCappPacketARPHeader;
 static VALUE cCappPacketEthernetHeader;
 static VALUE cCappPacketICMPHeader;
 static VALUE cCappPacketIPv4Header;
@@ -314,16 +318,21 @@ capp_s_open_offline(VALUE klass, VALUE file)
     return obj;
 }
 
+static VALUE
+capp_make_ether_str(const struct ether_addr *addr)
+{
+    return rb_str_new_cstr(ether_ntoa(addr));
+}
+
 static void
 capp_make_ethernet_header(VALUE headers, const struct ether_header *ether)
 {
-    struct ether_addr *ether_addr;
     VALUE ether_args[3];
 
-    ether_addr = (struct ether_addr *)ether->ether_dhost;
-    ether_args[0] = rb_str_new_cstr(ether_ntoa(ether_addr));
-    ether_addr = (struct ether_addr *)ether->ether_shost;
-    ether_args[1] = rb_str_new_cstr(ether_ntoa(ether_addr));
+    ether_args[0] =
+	capp_make_ether_str((struct ether_addr *)ether->ether_dhost);
+    ether_args[1] =
+	capp_make_ether_str((struct ether_addr *)ether->ether_shost);
     ether_args[2] = UINT2NUM(ntohs(ether->ether_type));
 
     rb_hash_aset(headers, ID2SYM(id_ethernet_header),
@@ -374,6 +383,55 @@ capp_make_udp_header(VALUE headers, const struct udphdr *header)
 
     rb_hash_aset(headers, ID2SYM(id_udp_header),
 	    rb_class_new_instance(4, udp_args, cCappPacketUDPHeader));
+}
+
+static void
+capp_make_arp_header(VALUE headers, const struct arphdr *header)
+{
+    VALUE arp_args[7];
+    u_char hln, pln;
+    u_short hrd, pro;
+    u_short sha_offset, spa_offset, tha_offset, tpa_offset;
+
+    hrd = ntohs(header->ar_hrd);
+    arp_args[0] = UINT2NUM(hrd);
+
+    pro = ntohs(header->ar_pro);
+    arp_args[1] = UINT2NUM(pro);
+    arp_args[2] = UINT2NUM(ntohs(header->ar_op));
+
+    hln = header->ar_hln;
+    pln = header->ar_pln;
+
+    sha_offset = sizeof(struct arphdr);
+    spa_offset = sizeof(struct arphdr) + hln;
+    tha_offset = sizeof(struct arphdr) + hln + pln;
+    tpa_offset = sizeof(struct arphdr) + hln + pln + hln;
+
+    switch (hrd) {
+    case ARPHRD_ETHER:
+	arp_args[3] =
+	    capp_make_ether_str((struct ether_addr *)((char *)header + sha_offset));
+	arp_args[5] =
+	    capp_make_ether_str((struct ether_addr *)((char *)header + tha_offset));
+	break;
+    default:
+	rb_raise(rb_eNotImpError, "unsupported ARP hardware type %d", hrd);
+    }
+
+    switch (pro) {
+    case ETHERTYPE_IP:
+	arp_args[4] =
+	    rb_str_new_cstr(inet_ntoa(*(struct in_addr *)((char *)header + spa_offset)));
+	arp_args[6] =
+	    rb_str_new_cstr(inet_ntoa(*(struct in_addr *)((char *)header + tpa_offset)));
+	break;
+    default:
+	rb_raise(rb_eNotImpError, "unsupported ARP protocol %x", pro);
+    }
+
+    rb_hash_aset(headers, ID2SYM(id_arp_header),
+	    rb_class_new_instance(7, arp_args, cCappPacketARPHeader));
 }
 
 static void
@@ -479,6 +537,10 @@ capp_make_packet_ethernet(VALUE headers, const u_char *data)
     case ETHERTYPE_IPV6:
 	capp_make_ipv6_header(headers,
 		(const struct ip6_hdr *)(data + sizeof(struct ether_header)));
+	break;
+    case ETHERTYPE_ARP:
+	capp_make_arp_header(headers,
+		(const struct arphdr *)(data + sizeof(struct ether_header)));
 	break;
     default:
 	rb_raise(rb_eNotImpError, "unknown ethertype %x", ethertype);
@@ -797,6 +859,7 @@ capp_stop(VALUE self)
 
 void
 Init_capp(void) {
+    id_arp_header         = rb_intern("arp_header");
     id_drop               = rb_intern("drop");
     id_ethernet_header    = rb_intern("ethernet_header");
     id_icmp_header        = rb_intern("icmp_header");
@@ -818,6 +881,8 @@ Init_capp(void) {
     cCappPacket  = rb_const_get(cCapp, rb_intern("Packet"));
     eCappError   = rb_const_get(cCapp, rb_intern("Error"));
 
+    cCappPacketARPHeader =
+	rb_const_get(cCappPacket, rb_intern("ARPHeader"));
     cCappPacketEthernetHeader =
 	rb_const_get(cCappPacket, rb_intern("EthernetHeader"));
     cCappPacketICMPHeader =
@@ -848,17 +913,139 @@ Init_capp(void) {
     rb_define_method(cCapp, "stop", capp_stop, 0);
     rb_define_method(cCapp, "timeout=", capp_set_timeout, 1);
 
+    /* Document-const: ARPHRD_ETHER
+     *
+     * Ethernet hardware
+     */
+    rb_define_const(cCapp, "ARPHRD_ETHER", INT2NUM(ARPHRD_ETHER));
+
+    /* Document-const: ARPHRD_FRELAY
+     *
+     * frame relay hardware
+     */
+    rb_define_const(cCapp, "ARPHRD_FRELAY", INT2NUM(ARPHRD_FRELAY));
+
+    /* Document-const: ARPHRD_IEEE1394
+     *
+     * IEEE1394 (FireWire™) hardware
+     */
+    rb_define_const(cCapp, "ARPHRD_IEEE1394", INT2NUM(ARPHRD_IEEE1394));
+
+    /* Document-const: ARPHRD_IEEE1394_EUI64
+     *
+     * IEEE1394 (FireWire™) hardware with EUI-64 addresses
+     */
+    rb_define_const(cCapp, "ARPHRD_IEEE1394_EUI64",
+	    INT2NUM(ARPHRD_IEEE1394_EUI64));
+
+    /* Document-const: ARPHRD_IEEE802
+     *
+     * token-ring hardware
+     */
+    rb_define_const(cCapp, "ARPHRD_IEEE802", INT2NUM(ARPHRD_IEEE802));
+
+    /* Document-const: ARPOP_INVREPLY
+     *
+     * ARP response identifying peer
+     */
+    rb_define_const(cCapp, "ARPOP_INVREPLY", INT2NUM(ARPOP_INVREPLY));
+
+    /* Document-const: ARPOP_INVREQUEST
+     *
+     * ARP request to identify peer
+     */
+    rb_define_const(cCapp, "ARPOP_INVREQUEST", INT2NUM(ARPOP_INVREQUEST));
+
+    /* Document-const: ARPOP_REPLY
+     *
+     * ARP response to resolve request
+     */
+    rb_define_const(cCapp, "ARPOP_REPLY", INT2NUM(ARPOP_REPLY));
+
+    /* Document-const: ARPOP_REQUEST
+     *
+     * ARP resolve address request
+     */
+    rb_define_const(cCapp, "ARPOP_REQUEST", INT2NUM(ARPOP_REQUEST));
+
+    /* Document-const: ARPOP_REVREPLY
+     *
+     * ARP response giving protocol address
+     */
+    rb_define_const(cCapp, "ARPOP_REVREPLY", INT2NUM(ARPOP_REVREPLY));
+
+    /* Document-const: ARPOP_REVREQUEST
+     *
+     * ARP request protocol address given hardware address
+     */
+    rb_define_const(cCapp, "ARPOP_REVREQUEST", INT2NUM(ARPOP_REVREQUEST));
+
     /* Document-const: DLT_NULL
      *
      * BSD loopback encapsulation.
      */
-    rb_define_const(cCapp, "DLT_NULL",   INT2NUM(DLT_NULL));
+    rb_define_const(cCapp, "DLT_NULL", INT2NUM(DLT_NULL));
 
     /* Document-const: DLT_EN10MB
      *
      * Ethernet encapsulation.
      */
     rb_define_const(cCapp, "DLT_EN10MB", INT2NUM(DLT_EN10MB));
+
+    /* Document-const: ETHERTYPE_ARP
+     *
+     * Address Resolution Protocol
+     */
+    rb_define_const(cCapp, "ETHERTYPE_ARP", INT2NUM(ETHERTYPE_ARP));
+
+    /* Document-const: ETHERTYPE_IP
+     *
+     * IPv4
+     */
+    rb_define_const(cCapp, "ETHERTYPE_IP", INT2NUM(ETHERTYPE_IP));
+
+    /* Document-const: ETHERTYPE_IPV6
+     *
+     * IPv6
+     */
+    rb_define_const(cCapp, "ETHERTYPE_IPV6", INT2NUM(ETHERTYPE_IPV6));
+
+    /* Document-const: ETHERTYPE_LOOPBACK
+     *
+     * Used to test interfaces
+     */
+    rb_define_const(cCapp, "ETHERTYPE_LOOPBACK", INT2NUM(ETHERTYPE_LOOPBACK));
+
+    /* Document-const: ETHERTYPE_PUP
+     *
+     * PUP protocol
+     */
+    rb_define_const(cCapp, "ETHERTYPE_PUP", INT2NUM(ETHERTYPE_PUP));
+
+    /* Document-const: ETHERTYPE_PAE
+     *
+     * EAPOL PAE/802.1x
+     */
+    rb_define_const(cCapp, "ETHERTYPE_PAE", INT2NUM(ETHERTYPE_PAE));
+
+    /* Document-const: ETHERTYPE_REVARP
+     *
+     * Reverse Address Resolution Protocol
+     */
+    rb_define_const(cCapp, "ETHERTYPE_REVARP", INT2NUM(ETHERTYPE_REVARP));
+
+    /* Document-const: ETHERTYPE_RSN_PREAUTH
+     *
+     * 802.11i / RSN Pre-Authentication
+     */
+    rb_define_const(cCapp, "ETHERTYPE_RSN_PREAUTH",
+	    INT2NUM(ETHERTYPE_RSN_PREAUTH));
+
+    /* Document-const: ETHERTYPE_VLAN
+     *
+     * IEEE 802.1Q VLAN tagging
+     */
+    rb_define_const(cCapp, "ETHERTYPE_VLAN", INT2NUM(ETHERTYPE_VLAN));
 
     /* Document-const: TCP_ACK
      *

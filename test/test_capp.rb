@@ -3,6 +3,7 @@ require 'capp'
 
 class TestCapp < MiniTest::Unit::TestCase
 
+  ARP_DUMP   = File.expand_path '../arp.pcap',   __FILE__
   ICMP4_DUMP = File.expand_path '../icmp4.pcap', __FILE__
   TCP4_DUMP  = File.expand_path '../tcp4.pcap',  __FILE__
   UDP4_DUMP  = File.expand_path '../udp4.pcap',  __FILE__
@@ -46,7 +47,7 @@ class TestCapp < MiniTest::Unit::TestCase
 
     assert_equal 'ff:ff:ff:ff:ff:ff', header.destination
     assert_equal '20:c9:d0:48:eb:73', header.source
-    assert_equal              0x0800, header.type
+    assert_equal Capp::ETHERTYPE_IP,  header.type
   end
 
   def test_filter_equals
@@ -63,6 +64,22 @@ class TestCapp < MiniTest::Unit::TestCase
     assert_raises Capp::Error do
       capp.filter = 'garbage'
     end
+  end
+
+  def test_arp_header
+    capp = Capp.offline ARP_DUMP
+
+    packet = capp.loop.first
+
+    header = packet.arp_header
+
+    assert_equal Capp::ARPHRD_ETHER,  header.hardware
+    assert_equal Capp::ETHERTYPE_IP,  header.protocol
+    assert_equal Capp::ARPOP_REQUEST, header.operation
+    assert_equal '2:c0:de:1:1:1',     header.sender_hardware_address
+    assert_equal '10.0.2.1',          header.sender_protocol_address
+    assert_equal 'ff:ff:ff:ff:ff:ff', header.target_hardware_address
+    assert_equal '10.0.0.101',        header.target_protocol_address
   end
 
   def test_ipv4_header

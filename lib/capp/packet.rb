@@ -3,6 +3,12 @@
 class Capp::Packet
 
   ##
+  # ARP header.  See RFC 826
+
+  ARPHeader = Struct.new :hardware, :protocol, :operation,
+                         :sender_hardware_address, :sender_protocol_address,
+                         :target_hardware_address, :target_protocol_address
+  ##
   # 802.3 Ethernet header
 
   EthernetHeader = Struct.new :destination, :source, :type
@@ -25,7 +31,6 @@ class Capp::Packet
   IPv6Header = Struct.new :version, :traffic_class, :flow_label,
                           :payload_length, :next_header, :hop_limit,
                           :source, :destination
-
 
   ##
   # TCP header.  See RFC 793
@@ -83,6 +88,11 @@ class Capp::Packet
   attr_reader :captured
 
   ##
+  # The ARP header
+
+  attr_reader :arp_header
+
+  ##
   # The Ethernet header
 
   attr_reader :ethernet_header
@@ -136,6 +146,7 @@ class Capp::Packet
     @timestamp      = timestamp
     @datalink       = datalink
 
+    @arp_header      = headers[:arp_header]
     @ethernet_header = headers[:ethernet_header]
     @icmp_header     = headers[:icmp_header]
     @ipv4_header     = headers[:ipv4_header]
