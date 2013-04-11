@@ -24,13 +24,13 @@ class TestCappPacket < MiniTest::Unit::TestCase
     length = @captured.length
 
     @headers = {
-      ethernet_header:
+      ethernet:
         @CP::EthernetHeader.new(0x01_00_5e_00_00_fb, 0x20_c9_d0_48_eb_73,
                                 0x0800),
-      ipv4_header:
+      ipv4:
         @CP::IPv4Header.new(4, 5, 0, 57, 61330, 0, 1, 17, 49780,
                             '10.101.28.77', '224.0.0.251'),
-      udp_header:
+      udp:
         @CP::UDPHeader.new(64010, 5353, 37, 14921),
     }
 
@@ -66,6 +66,10 @@ class TestCappPacket < MiniTest::Unit::TestCase
     assert_equal 0x01_00_5e_00_00_fb, header.destination, 'destination'
     assert_equal 0x20_c9_d0_48_eb_73, header.source,      'source'
     assert_equal 0x0800,              header.type,        'type'
+  end
+
+  def test_header_types
+    assert_equal [:ethernet, :ipv4, :udp], @packet.header_types
   end
 
   def test_hexdump

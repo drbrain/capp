@@ -26,19 +26,19 @@ struct capp_loop_args {
 
 #define GetCapp(obj, capp) Data_Get_Struct(obj, pcap_t, capp)
 
-static ID id_arp_header;
+static ID id_arp;
 static ID id_drop;
-static ID id_ethernet_header;
-static ID id_icmp_header;
+static ID id_ethernet;
+static ID id_icmp;
 static ID id_ifdrop;
-static ID id_ipv4_header;
-static ID id_ipv6_header;
+static ID id_ipv4;
+static ID id_ipv6;
 static ID id_iv_datalink;
 static ID id_iv_device;
 static ID id_recv;
 static ID id_type;
-static ID id_tcp_header;
-static ID id_udp_header;
+static ID id_tcp;
+static ID id_udp;
 static ID id_unpack_sockaddr_in;
 
 static VALUE cCapp;
@@ -335,7 +335,7 @@ capp_make_ethernet_header(VALUE headers, const struct ether_header *ether)
 	capp_make_ether_str((struct ether_addr *)ether->ether_shost);
     ether_args[2] = UINT2NUM(ntohs(ether->ether_type));
 
-    rb_hash_aset(headers, ID2SYM(id_ethernet_header),
+    rb_hash_aset(headers, ID2SYM(id_ethernet),
 	    rb_class_new_instance(3, ether_args, cCappPacketEthernetHeader));
 }
 
@@ -348,7 +348,7 @@ capp_make_icmp_header(VALUE headers, const struct icmp *header)
     icmp_args[1] = UINT2NUM(header->icmp_code);
     icmp_args[2] = UINT2NUM(ntohs(header->icmp_cksum));
 
-    rb_hash_aset(headers, ID2SYM(id_icmp_header),
+    rb_hash_aset(headers, ID2SYM(id_icmp),
 	    rb_class_new_instance(3, icmp_args, cCappPacketICMPHeader));
 }
 
@@ -367,7 +367,7 @@ capp_make_tcp_header(VALUE headers, const struct tcphdr *header)
     tcp_args[7] = UINT2NUM(ntohs(header->th_sum));
     tcp_args[8] = UINT2NUM(ntohs(header->th_urp));
 
-    rb_hash_aset(headers, ID2SYM(id_tcp_header),
+    rb_hash_aset(headers, ID2SYM(id_tcp),
 	    rb_class_new_instance(9, tcp_args, cCappPacketTCPHeader));
 }
 
@@ -381,7 +381,7 @@ capp_make_udp_header(VALUE headers, const struct udphdr *header)
     udp_args[2] = UINT2NUM(ntohs(header->uh_ulen));
     udp_args[3] = UINT2NUM(ntohs(header->uh_sum));
 
-    rb_hash_aset(headers, ID2SYM(id_udp_header),
+    rb_hash_aset(headers, ID2SYM(id_udp),
 	    rb_class_new_instance(4, udp_args, cCappPacketUDPHeader));
 }
 
@@ -430,7 +430,7 @@ capp_make_arp_header(VALUE headers, const struct arphdr *header)
 	rb_raise(rb_eNotImpError, "unsupported ARP protocol %x", pro);
     }
 
-    rb_hash_aset(headers, ID2SYM(id_arp_header),
+    rb_hash_aset(headers, ID2SYM(id_arp),
 	    rb_class_new_instance(7, arp_args, cCappPacketARPHeader));
 }
 
@@ -466,7 +466,7 @@ capp_make_ipv4_header(VALUE headers, const struct ip *header)
 	break;
     }
 
-    rb_hash_aset(headers, ID2SYM(id_ipv4_header),
+    rb_hash_aset(headers, ID2SYM(id_ipv4),
 	    rb_class_new_instance(11, ipv4_args, cCappPacketIPv4Header));
 }
 
@@ -514,7 +514,7 @@ capp_make_ipv6_header(VALUE headers, const struct ip6_hdr *header)
 	break;
     }
 
-    rb_hash_aset(headers, ID2SYM(id_ipv6_header),
+    rb_hash_aset(headers, ID2SYM(id_ipv6),
 	    rb_class_new_instance(8, ipv6_args, cCappPacketIPv6Header));
 }
 
@@ -526,7 +526,7 @@ capp_make_packet_ethernet(VALUE headers, const u_char *data)
 
     capp_make_ethernet_header(headers, (const struct ether_header *)data);
 
-    ether_header = rb_hash_aref(headers, ID2SYM(id_ethernet_header));
+    ether_header = rb_hash_aref(headers, ID2SYM(id_ethernet));
     ethertype = NUM2USHORT(rb_funcall(ether_header, id_type, 0));
 
     switch (ethertype) {
@@ -859,19 +859,19 @@ capp_stop(VALUE self)
 
 void
 Init_capp(void) {
-    id_arp_header         = rb_intern("arp_header");
+    id_arp                = rb_intern("arp");
     id_drop               = rb_intern("drop");
-    id_ethernet_header    = rb_intern("ethernet_header");
-    id_icmp_header        = rb_intern("icmp_header");
+    id_ethernet           = rb_intern("ethernet");
+    id_icmp               = rb_intern("icmp");
     id_ifdrop             = rb_intern("ifdrop");
-    id_ipv4_header        = rb_intern("ipv4_header");
-    id_ipv6_header        = rb_intern("ipv6_header");
+    id_ipv4               = rb_intern("ipv4");
+    id_ipv6               = rb_intern("ipv6");
     id_iv_datalink        = rb_intern("@datalink");
     id_iv_device          = rb_intern("@device");
     id_recv               = rb_intern("recv");
-    id_tcp_header         = rb_intern("tcp_header");
+    id_tcp                = rb_intern("tcp");
     id_type               = rb_intern("type");
-    id_udp_header         = rb_intern("udp_header");
+    id_udp                = rb_intern("udp");
     id_unpack_sockaddr_in = rb_intern("unpack_sockaddr_in");
 
     cCapp        = rb_define_class("Capp", rb_cObject);

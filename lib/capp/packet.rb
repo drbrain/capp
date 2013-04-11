@@ -98,6 +98,11 @@ class Capp::Packet
   attr_reader :ethernet_header
 
   ##
+  # Header types in the packet
+
+  attr_reader :header_types
+
+  ##
   # ICMP header
 
   attr_reader :icmp_header
@@ -146,13 +151,15 @@ class Capp::Packet
     @timestamp      = timestamp
     @datalink       = datalink
 
-    @arp_header      = headers[:arp_header]
-    @ethernet_header = headers[:ethernet_header]
-    @icmp_header     = headers[:icmp_header]
-    @ipv4_header     = headers[:ipv4_header]
-    @ipv6_header     = headers[:ipv6_header]
-    @tcp_header      = headers[:tcp_header]
-    @udp_header      = headers[:udp_header]
+    @header_types    = headers.keys
+
+    @arp_header      = headers[:arp]
+    @ethernet_header = headers[:ethernet]
+    @icmp_header     = headers[:icmp]
+    @ipv4_header     = headers[:ipv4]
+    @ipv6_header     = headers[:ipv6]
+    @tcp_header      = headers[:tcp]
+    @udp_header      = headers[:udp]
   end
 
   ##
