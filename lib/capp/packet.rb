@@ -11,11 +11,6 @@ class Capp::Packet
   ##
   # 802.3 Ethernet header
 
-  EAP_802_1X = Struct.new :code, :identifier, :length
-
-  ##
-  # 802.3 Ethernet header
-
   EthernetHeader = Struct.new :destination, :source, :type
 
   ##
@@ -83,6 +78,12 @@ class Capp::Packet
   UDPHeader = Struct.new :source_port, :destination_port, :length, :checksum
 
   ##
+  # Fake header for an unknown layer 3 protocol.  See also
+  # Capp::Packet#unknown_layer3_header
+
+  UnknownLayer3Header = Struct.new :payload_offset
+
+  ##
   # Length of packet that was captured
 
   attr_reader :capture_length
@@ -96,11 +97,6 @@ class Capp::Packet
   # The ARP header
 
   attr_reader :arp_header
-
-  ##
-  # The EAP/802.1X header
-
-  attr_reader :eap_802_1X_header
 
   ##
   # The Ethernet header
@@ -149,6 +145,12 @@ class Capp::Packet
   attr_reader :udp_header
 
   ##
+  # Fake header for unknown layer 3 packets.  See the ethernet_header for the
+  # type, this only provides the payload offset of the packet content.
+
+  attr_reader :unknown_layer3_header
+
+  ##
   # Creates a new packet.  Ordinarily this is performed from Capp#loop.  The
   # +timestamp+ is the packet capture timestamp, +length+ is the total length
   # of the packet, +capture_length+ is the number of captured bytes from the
@@ -163,14 +165,14 @@ class Capp::Packet
     @protocols      = headers.keys
     @timestamp      = timestamp
 
-    @arp_header        = headers[:arp]
-    @eap_802_1X_header = headers[:eap_802_1X]
-    @ethernet_header   = headers[:ethernet]
-    @icmp_header       = headers[:icmp]
-    @ipv4_header       = headers[:ipv4]
-    @ipv6_header       = headers[:ipv6]
-    @tcp_header        = headers[:tcp]
-    @udp_header        = headers[:udp]
+    @arp_header            = headers[:arp]
+    @ethernet_header       = headers[:ethernet]
+    @icmp_header           = headers[:icmp]
+    @ipv4_header           = headers[:ipv4]
+    @ipv6_header           = headers[:ipv6]
+    @tcp_header            = headers[:tcp]
+    @udp_header            = headers[:udp]
+    @unknown_layer3_header = headers[:unknown_layer3]
   end
 
   ##

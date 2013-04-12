@@ -38,18 +38,6 @@ class TestCapp < MiniTest::Unit::TestCase
     assert capp.loop.first
   end
 
-  def test_eap_802_1X_header
-    capp = Capp.offline EAP_802_1X_DUMP
-
-    packet = capp.loop.first
-
-    header = packet.eap_802_1X_header
-
-    assert_equal   1, header.code
-    assert_equal   3, header.identifier
-    assert_equal 117, header.length
-  end
-
   def test_ethernet_header
     capp = Capp.offline UDP4_DUMP
 
@@ -220,6 +208,16 @@ class TestCapp < MiniTest::Unit::TestCase
     assert_equal  7647, header.destination_port
     assert_equal   105, header.length
     assert_equal  3147, header.checksum
+  end
+
+  def test_unknown_layer3_header
+    capp = Capp.offline EAP_802_1X_DUMP
+
+    packet = capp.loop.first
+
+    header = packet.unknown_layer3_header
+
+    assert_equal 14, header.payload_offset
   end
 
 end

@@ -24,17 +24,10 @@ struct capp_loop_args {
     const u_char *data;
 };
 
-struct eap_802_1X_hdr {
-    unsigned char code;
-    unsigned char identifier;
-    unsigned short length;
-};
-
 #define GetCapp(obj, capp) Data_Get_Struct(obj, pcap_t, capp)
 
 static ID id_arp;
 static ID id_drop;
-static ID id_eap_802_1X;
 static ID id_ethernet;
 static ID id_icmp;
 static ID id_ifdrop;
@@ -46,6 +39,7 @@ static ID id_recv;
 static ID id_type;
 static ID id_tcp;
 static ID id_udp;
+static ID id_unknown_layer3;
 static ID id_unpack_sockaddr_in;
 
 static VALUE cCapp;
@@ -53,13 +47,13 @@ static VALUE cCappAddress;
 static VALUE cCappDevice;
 static VALUE cCappPacket;
 static VALUE cCappPacketARPHeader;
-static VALUE cCappPacketEAP_802_1XHeader;
 static VALUE cCappPacketEthernetHeader;
 static VALUE cCappPacketICMPHeader;
 static VALUE cCappPacketIPv4Header;
 static VALUE cCappPacketIPv6Header;
 static VALUE cCappPacketTCPHeader;
 static VALUE cCappPacketUDPHeader;
+static VALUE cCappPacketUnknownLayer3Header;
 static VALUE cSocket;
 
 static VALUE eCappError;
@@ -333,16 +327,14 @@ capp_make_ether_str(const struct ether_addr *addr)
 }
 
 static void
-capp_make_eap_802_1X_header(VALUE headers, const struct eap_802_1X_hdr *eap)
+capp_make_unknown_layer3_header(VALUE headers)
 {
-    VALUE eap_args[3];
+    VALUE unknown_args[1];
 
-    eap_args[0] = UINT2NUM(eap->code);
-    eap_args[1] = UINT2NUM(eap->identifier);
-    eap_args[2] = UINT2NUM(ntohs(eap->length));
+    unknown_args[0] = UINT2NUM(sizeof(struct ether_header));
 
-    rb_hash_aset(headers, ID2SYM(id_eap_802_1X),
-	    rb_class_new_instance(3, eap_args, cCappPacketEAP_802_1XHeader));
+    rb_hash_aset(headers, ID2SYM(id_unknown_layer3),
+	    rb_class_new_instance(1, unknown_args, cCappPacketUnknownLayer3Header));
 }
 
 static void
@@ -555,9 +547,6 @@ capp_make_packet_ethernet(VALUE headers, const u_char *data)
 	capp_make_arp_header(headers,
 		(const struct arphdr *)(data + sizeof(struct ether_header)));
 	break;
-    case ETHERTYPE_PAE:
-	capp_make_eap_802_1X_header(headers,
-		(const struct eap_802_1X_hdr *)(data + sizeof(struct ether_header)));
     case ETHERTYPE_IP:
 	capp_make_ipv4_header(headers,
 		(const struct ip *)(data + sizeof(struct ether_header)));
@@ -567,10 +556,7 @@ capp_make_packet_ethernet(VALUE headers, const u_char *data)
 		(const struct ip6_hdr *)(data + sizeof(struct ether_header)));
 	break;
     default:
-	if (ethertype > ETHERMTU)
-	    rb_raise(rb_eNotImpError, "unknown ethertype %04x", ethertype);
-
-	/* otherwise probably an LLC frame which we ignore, see tcpdump */
+	capp_make_unknown_layer3_header(headers);
     }
 }
 
@@ -888,7 +874,6 @@ void
 Init_capp(void) {
     id_arp                = rb_intern("arp");
     id_drop               = rb_intern("drop");
-    id_eap_802_1X         = rb_intern("eap_802_1X");
     id_ethernet           = rb_intern("ethernet");
     id_icmp               = rb_intern("icmp");
     id_ifdrop             = rb_intern("ifdrop");
@@ -900,6 +885,7 @@ Init_capp(void) {
     id_tcp                = rb_intern("tcp");
     id_type               = rb_intern("type");
     id_udp                = rb_intern("udp");
+    id_unknown_layer3     = rb_intern("unknown_layer3");
     id_unpack_sockaddr_in = rb_intern("unpack_sockaddr_in");
 
     cCapp        = rb_define_class("Capp", rb_cObject);
@@ -911,8 +897,6 @@ Init_capp(void) {
 
     cCappPacketARPHeader =
 	rb_const_get(cCappPacket, rb_intern("ARPHeader"));
-    cCappPacketEAP_802_1XHeader =
-	rb_const_get(cCappPacket, rb_intern("EAP_802_1X"));
     cCappPacketEthernetHeader =
 	rb_const_get(cCappPacket, rb_intern("EthernetHeader"));
     cCappPacketICMPHeader =
@@ -925,6 +909,8 @@ Init_capp(void) {
 	rb_const_get(cCappPacket, rb_intern("TCPHeader"));
     cCappPacketUDPHeader =
 	rb_const_get(cCappPacket, rb_intern("UDPHeader"));
+    cCappPacketUnknownLayer3Header =
+	rb_const_get(cCappPacket, rb_intern("UnknownLayer3Header"));
 
     cSocket = rb_const_get(rb_cObject, rb_intern("Socket"));
 
