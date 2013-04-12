@@ -7,6 +7,7 @@ ext/capp/capp.c
 ext/capp/extconf.rb
 lib/capp.rb
 lib/capp/packet.rb
+test/802.1X.pcap
 test/arp.pcap
 test/icmp4.pcap
 test/icmp6.pcap

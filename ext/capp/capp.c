@@ -24,10 +24,17 @@ struct capp_loop_args {
     const u_char *data;
 };
 
+struct eap_802_1X_hdr {
+    unsigned char code;
+    unsigned char identifier;
+    unsigned short length;
+};
+
 #define GetCapp(obj, capp) Data_Get_Struct(obj, pcap_t, capp)
 
 static ID id_arp;
 static ID id_drop;
+static ID id_eap_802_1X;
 static ID id_ethernet;
 static ID id_icmp;
 static ID id_ifdrop;
@@ -46,6 +53,7 @@ static VALUE cCappAddress;
 static VALUE cCappDevice;
 static VALUE cCappPacket;
 static VALUE cCappPacketARPHeader;
+static VALUE cCappPacketEAP_802_1XHeader;
 static VALUE cCappPacketEthernetHeader;
 static VALUE cCappPacketICMPHeader;
 static VALUE cCappPacketIPv4Header;
@@ -325,6 +333,19 @@ capp_make_ether_str(const struct ether_addr *addr)
 }
 
 static void
+capp_make_eap_802_1X_header(VALUE headers, const struct eap_802_1X_hdr *eap)
+{
+    VALUE eap_args[3];
+
+    eap_args[0] = UINT2NUM(eap->code);
+    eap_args[1] = UINT2NUM(eap->identifier);
+    eap_args[2] = UINT2NUM(ntohs(eap->length));
+
+    rb_hash_aset(headers, ID2SYM(id_eap_802_1X),
+	    rb_class_new_instance(3, eap_args, cCappPacketEAP_802_1XHeader));
+}
+
+static void
 capp_make_ethernet_header(VALUE headers, const struct ether_header *ether)
 {
     VALUE ether_args[3];
@@ -530,6 +551,13 @@ capp_make_packet_ethernet(VALUE headers, const u_char *data)
     ethertype = NUM2USHORT(rb_funcall(ether_header, id_type, 0));
 
     switch (ethertype) {
+    case ETHERTYPE_ARP:
+	capp_make_arp_header(headers,
+		(const struct arphdr *)(data + sizeof(struct ether_header)));
+	break;
+    case ETHERTYPE_PAE:
+	capp_make_eap_802_1X_header(headers,
+		(const struct eap_802_1X_hdr *)(data + sizeof(struct ether_header)));
     case ETHERTYPE_IP:
 	capp_make_ipv4_header(headers,
 		(const struct ip *)(data + sizeof(struct ether_header)));
@@ -537,10 +565,6 @@ capp_make_packet_ethernet(VALUE headers, const u_char *data)
     case ETHERTYPE_IPV6:
 	capp_make_ipv6_header(headers,
 		(const struct ip6_hdr *)(data + sizeof(struct ether_header)));
-	break;
-    case ETHERTYPE_ARP:
-	capp_make_arp_header(headers,
-		(const struct arphdr *)(data + sizeof(struct ether_header)));
 	break;
     default:
 	if (ethertype > ETHERMTU)
@@ -864,6 +888,7 @@ void
 Init_capp(void) {
     id_arp                = rb_intern("arp");
     id_drop               = rb_intern("drop");
+    id_eap_802_1X         = rb_intern("eap_802_1X");
     id_ethernet           = rb_intern("ethernet");
     id_icmp               = rb_intern("icmp");
     id_ifdrop             = rb_intern("ifdrop");
@@ -886,6 +911,8 @@ Init_capp(void) {
 
     cCappPacketARPHeader =
 	rb_const_get(cCappPacket, rb_intern("ARPHeader"));
+    cCappPacketEAP_802_1XHeader =
+	rb_const_get(cCappPacket, rb_intern("EAP_802_1X"));
     cCappPacketEthernetHeader =
 	rb_const_get(cCappPacket, rb_intern("EthernetHeader"));
     cCappPacketICMPHeader =

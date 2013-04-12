@@ -3,12 +3,12 @@ require 'capp'
 
 class TestCapp < MiniTest::Unit::TestCase
 
-  ARP_DUMP   = File.expand_path '../arp.pcap',   __FILE__
-  ICMP4_DUMP = File.expand_path '../icmp4.pcap', __FILE__
-  TCP4_DUMP  = File.expand_path '../tcp4.pcap',  __FILE__
-  UDP4_DUMP  = File.expand_path '../udp4.pcap',  __FILE__
-
-  ICMP6_DUMP = File.expand_path '../icmp6.pcap', __FILE__
+  ARP_DUMP        = File.expand_path '../arp.pcap',    __FILE__
+  EAP_802_1X_DUMP = File.expand_path '../802.1X.pcap', __FILE__
+  ICMP4_DUMP      = File.expand_path '../icmp4.pcap',  __FILE__
+  ICMP6_DUMP      = File.expand_path '../icmp6.pcap',  __FILE__
+  TCP4_DUMP       = File.expand_path '../tcp4.pcap',   __FILE__
+  UDP4_DUMP       = File.expand_path '../udp4.pcap',   __FILE__
 
   def test_class_offline_file
     open ICMP4_DUMP do |io|
@@ -36,6 +36,18 @@ class TestCapp < MiniTest::Unit::TestCase
     capp = Capp.open ICMP4_DUMP
 
     assert capp.loop.first
+  end
+
+  def test_eap_802_1X_header
+    capp = Capp.offline EAP_802_1X_DUMP
+
+    packet = capp.loop.first
+
+    header = packet.eap_802_1X_header
+
+    assert_equal   1, header.code
+    assert_equal   3, header.identifier
+    assert_equal 117, header.length
   end
 
   def test_ethernet_header
