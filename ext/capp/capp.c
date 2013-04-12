@@ -1,3 +1,26 @@
+/*
+ * The SWAPLONG macro and its use in capp_make_packet_null are copied from
+ * tcpdump and used under the BSD license:
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *   
+ *   1. Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *   2. Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in
+ *      the documentation and/or other materials provided with the
+ *      distribution.
+ *   3. The names of the authors may not be used to endorse or promote
+ *      products derived from this software without specific prior
+ *      written permission.
+ *   
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
 #include <pcap/pcap.h>
 
 #include <arpa/inet.h>
@@ -23,6 +46,14 @@ struct capp_loop_args {
     const struct pcap_pkthdr *header;
     const u_char *data;
 };
+
+/*
+ * Byte-swap a 32-bit number.
+ * ("htonl()" or "ntohl()" won't work - we want to byte-swap even on
+ * big-endian platforms.)
+ */
+#define	SWAPLONG(y) \
+((((y)&0xff)<<24) | (((y)&0xff00)<<8) | (((y)&0xff0000)>>8) | (((y)>>24)&0xff))
 
 #define GetCapp(obj, capp) Data_Get_Struct(obj, pcap_t, capp)
 
@@ -327,11 +358,11 @@ capp_make_ether_str(const struct ether_addr *addr)
 }
 
 static void
-capp_make_unknown_layer3_header(VALUE headers)
+capp_make_unknown_layer3_header(VALUE headers, off_t offset)
 {
     VALUE unknown_args[1];
 
-    unknown_args[0] = UINT2NUM(sizeof(struct ether_header));
+    unknown_args[0] = UINT2NUM(offset);
 
     rb_hash_aset(headers, ID2SYM(id_unknown_layer3),
 	    rb_class_new_instance(1, unknown_args, cCappPacketUnknownLayer3Header));
@@ -536,6 +567,7 @@ capp_make_packet_ethernet(VALUE headers, const u_char *data)
 {
     VALUE ether_header;
     uint16_t ethertype;
+    size_t ether_header_size = sizeof(struct ether_header);
 
     capp_make_ethernet_header(headers, (const struct ether_header *)data);
 
@@ -545,39 +577,53 @@ capp_make_packet_ethernet(VALUE headers, const u_char *data)
     switch (ethertype) {
     case ETHERTYPE_ARP:
 	capp_make_arp_header(headers,
-		(const struct arphdr *)(data + sizeof(struct ether_header)));
+		(const struct arphdr *)(data + ether_header_size));
 	break;
     case ETHERTYPE_IP:
 	capp_make_ipv4_header(headers,
-		(const struct ip *)(data + sizeof(struct ether_header)));
+		(const struct ip *)(data + ether_header_size));
 	break;
     case ETHERTYPE_IPV6:
 	capp_make_ipv6_header(headers,
-		(const struct ip6_hdr *)(data + sizeof(struct ether_header)));
+		(const struct ip6_hdr *)(data + ether_header_size));
 	break;
     default:
-	capp_make_unknown_layer3_header(headers);
+	capp_make_unknown_layer3_header(headers, ether_header_size);
+	break;
     }
 }
 
 static void
 capp_make_packet_null(VALUE headers, const u_char *data)
 {
-    uint32_t protocol_family = (uint32_t)*data;
+    uint32_t protocol_family;
+    size_t protocol_family_size = sizeof(protocol_family);
+
+    memcpy((char *)&protocol_family, (char *)data, protocol_family_size);
+
+    /*
+     * This isn't necessarily in our host byte order; if this is
+     * a DLT_LOOP capture, it's in network byte order, and if
+     * this is a DLT_NULL capture from a machine with the opposite
+     * byte-order, it's in the opposite byte order from ours.
+     *
+     * If the upper 16 bits aren't all zero, assume it's byte-swapped.
+     */
+    if ((protocol_family & 0xFFFF0000) != 0)
+	protocol_family = SWAPLONG(protocol_family);
 
     switch (protocol_family) {
     case PF_INET:
 	capp_make_ipv4_header(headers,
-		(const struct ip *)(data + sizeof(uint32_t)));
+		(const struct ip *)(data + protocol_family_size));
 	break;
     case PF_INET6:
 	capp_make_ipv6_header(headers,
-		(const struct ip6_hdr *)(data + sizeof(uint32_t)));
+		(const struct ip6_hdr *)(data + protocol_family_size));
 	break;
     default:
-	rb_raise(rb_eNotImpError, "unknown protocol family %d",
-		protocol_family);
-	break; /* unreachable */
+	capp_make_unknown_layer3_header(headers, protocol_family_size);
+	break;
     }
 }
 
