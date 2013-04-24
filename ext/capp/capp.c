@@ -136,7 +136,7 @@ capp_sockaddr_to_address(struct sockaddr *addr)
 	dl = (struct sockaddr_dl *)addr;
 	ether = (struct ether_addr *)LLADDR(dl);
 
-	return rb_str_new2(ether_ntoa(ether));
+	return rb_usascii_str_new_cstr(ether_ntoa(ether));
     }
 
     return sockaddr_string;
@@ -354,7 +354,7 @@ capp_s_open_offline(VALUE klass, VALUE file)
 static VALUE
 capp_make_ether_str(const struct ether_addr *addr)
 {
-    return rb_str_new_cstr(ether_ntoa(addr));
+    return rb_usascii_str_new_cstr(ether_ntoa(addr));
 }
 
 static void
@@ -466,9 +466,9 @@ capp_make_arp_header(VALUE headers, const struct arphdr *header)
     switch (pro) {
     case ETHERTYPE_IP:
 	arp_args[4] =
-	    rb_str_new_cstr(inet_ntoa(*(struct in_addr *)((char *)header + spa_offset)));
+	    rb_usascii_str_new_cstr(inet_ntoa(*(struct in_addr *)((char *)header + spa_offset)));
 	arp_args[6] =
-	    rb_str_new_cstr(inet_ntoa(*(struct in_addr *)((char *)header + tpa_offset)));
+	    rb_usascii_str_new_cstr(inet_ntoa(*(struct in_addr *)((char *)header + tpa_offset)));
 	break;
     default:
 	rb_raise(rb_eNotImpError, "unsupported ARP protocol %x", pro);
@@ -493,8 +493,8 @@ capp_make_ipv4_header(VALUE headers, const struct ip *header)
     ipv4_args[6]  = UINT2NUM(header->ip_ttl);
     ipv4_args[7]  = UINT2NUM(header->ip_p);
     ipv4_args[8]  = UINT2NUM(ntohs(header->ip_sum));
-    ipv4_args[9]  = rb_str_new_cstr(inet_ntoa(header->ip_src));
-    ipv4_args[10] = rb_str_new_cstr(inet_ntoa(header->ip_dst));
+    ipv4_args[9]  = rb_usascii_str_new_cstr(inet_ntoa(header->ip_src));
+    ipv4_args[10] = rb_usascii_str_new_cstr(inet_ntoa(header->ip_dst));
 
     ip_payload = (char *)header + header->ip_hl * 4;
 
