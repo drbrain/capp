@@ -1,14 +1,6 @@
-require 'minitest/autorun'
-require 'capp'
+require 'capp/test_case'
 
-class TestCapp < MiniTest::Unit::TestCase
-
-  ARP_DUMP        = File.expand_path '../arp.pcap',    __FILE__
-  EAP_802_1X_DUMP = File.expand_path '../802.1X.pcap', __FILE__
-  ICMP4_DUMP      = File.expand_path '../icmp4.pcap',  __FILE__
-  ICMP6_DUMP      = File.expand_path '../icmp6.pcap',  __FILE__
-  TCP4_DUMP       = File.expand_path '../tcp4.pcap',   __FILE__
-  UDP4_DUMP       = File.expand_path '../udp4.pcap',   __FILE__
+class TestCapp < Capp::TestCase
 
   def test_class_offline_file
     open ICMP4_DUMP do |io|

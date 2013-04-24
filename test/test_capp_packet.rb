@@ -1,11 +1,10 @@
 # encoding: BINARY
 
-require 'minitest/autorun'
-require 'capp'
+require 'capp/test_case'
 require 'resolv'
 require 'tempfile'
 
-class TestCappPacket < MiniTest::Unit::TestCase
+class TestCappPacket < Capp::TestCase
 
   def setup
     super
