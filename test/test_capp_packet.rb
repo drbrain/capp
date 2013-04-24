@@ -90,6 +90,14 @@ class TestCappPacket < Capp::TestCase
     assert_equal expected, @packet.hexdump(14)
   end
 
+  def test_ipv4_eh
+    assert @packet.ipv4?
+  end
+
+  def test_ipv6_eh
+    refute @packet.ipv6?
+  end
+
   def test_payload
     expected = dump @captured[42, @captured.length]
     assert_equal expected, dump(@packet.payload)
@@ -105,14 +113,6 @@ class TestCappPacket < Capp::TestCase
     assert_raises NotImplementedError do
       packet(ARP_DUMP).payload_offset
     end
-  end
-
-  def test_ipv4_eh
-    assert @packet.ipv4?
-  end
-
-  def test_ipv6_eh
-    refute @packet.ipv6?
   end
 
   def test_protocols
