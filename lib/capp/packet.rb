@@ -278,6 +278,9 @@ class Capp::Packet
 
   ##
   # The offset into the captured data where the payload starts.
+  #
+  # Note that this method does not work properly for IPv6 packets with options
+  # set, but I have yet to encounter such an example in the wild.
 
   def payload_offset
     offset =

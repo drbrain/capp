@@ -8,7 +8,13 @@ class Capp::TestCase < MiniTest::Unit::TestCase
   ICMP4_DUMP      = File.expand_path '../../../test/icmp4.pcap',  __FILE__
   ICMP6_DUMP      = File.expand_path '../../../test/icmp6.pcap',  __FILE__
   TCP4_DUMP       = File.expand_path '../../../test/tcp4.pcap',   __FILE__
+  TCP6_DUMP       = File.expand_path '../../../test/tcp6.pcap',   __FILE__
   UDP4_DUMP       = File.expand_path '../../../test/udp4.pcap',   __FILE__
+  UDP6_DUMP       = File.expand_path '../../../test/udp6.pcap',   __FILE__
+
+  def packet dump
+    Capp.offline(dump).loop.first
+  end
 
 end
 

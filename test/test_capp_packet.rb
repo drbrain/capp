@@ -95,6 +95,18 @@ class TestCappPacket < Capp::TestCase
     assert_equal expected, dump(@packet.payload)
   end
 
+  def test_payload_offset
+    assert_equal 78, packet(TCP4_DUMP).payload_offset
+    assert_equal 42, packet(UDP4_DUMP).payload_offset
+
+    assert_equal 88, packet(TCP6_DUMP).payload_offset
+    assert_equal 62, packet(UDP6_DUMP).payload_offset
+
+    assert_raises NotImplementedError do
+      packet(ARP_DUMP).payload_offset
+    end
+  end
+
   def test_ipv4_eh
     assert @packet.ipv4?
   end
