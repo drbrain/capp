@@ -1,5 +1,14 @@
 # coding: BINARY
 
+##
+# Capp::Packet provides convenience for extracting data from packets.
+#
+# Packet objects are automatically created when a packet is read from the
+# opened interface when Capp understands what type of packet was read.
+#
+# If Capp doesn't understand your packets you can extract the data by editing
+# capp.c and submitting a patch.  See README for the source code location.
+
 class Capp::Packet
 
   ##
@@ -38,33 +47,57 @@ class Capp::Packet
   TCPHeader = Struct.new :source_port, :destination_port,
                          :seq_number, :ack_number,
                          :offset, :flags, :window, :checksum, :urgent do
+    ##
+    # Is the acknowledgment flag set?
+
     def ack?
       Capp::TCP_ACK == flags & Capp::TCP_ACK
     end
+
+    ##
+    # Is the congestion window reduced flag set?
 
     def cwr?
       Capp::TCP_CWR == flags & Capp::TCP_CWR
     end
 
+    ##
+    # Is the explicit congestion notification echo flag set?
+
     def ece?
       Capp::TCP_ECE == flags & Capp::TCP_ECE
     end
+
+    ##
+    # Is the no-more-data flag set?
 
     def fin?
       Capp::TCP_FIN == flags & Capp::TCP_FIN
     end
 
+    ##
+    # Is the push flag set?
+
     def push?
       Capp::TCP_PUSH == flags & Capp::TCP_PUSH
     end
+
+    ##
+    # Is the reset flag set?
 
     def rst?
       Capp::TCP_RST == flags & Capp::TCP_RST
     end
 
+    ##
+    # Is the synchronize flag set?
+
     def syn?
       Capp::TCP_SYN == flags & Capp::TCP_SYN
     end
+
+    ##
+    # Is the urgent flag set?
 
     def urg?
       Capp::TCP_URG == flags & Capp::TCP_URG

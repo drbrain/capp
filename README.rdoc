@@ -6,8 +6,10 @@ bugs :: https://github.com/drbrain/capp/issues
 
 == Description
 
-Capp is a GVL-friendly pcap wrapper library.  Capp provides a simple API for
-capturing packets that cooperates with other threads.
+Capp is a packet capture library that wraps pcap.  Capp provides a simple API
+for capturing packets and automatically unpacks common packets (including
+Ethernet, IP, TCP, UDP and ICMP).  Capp also cooperates with other threads
+better than other pcap wrapper libraries for ruby.
 
 == Synopsis
 

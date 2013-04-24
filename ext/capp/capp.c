@@ -627,6 +627,17 @@ capp_make_packet_null(VALUE headers, const u_char *data)
     }
 }
 
+/*
+ * capp_make_packet parses out the packet structure (if it understands it) and
+ * calls Capp::Packet::new.
+ *
+ * Parsing starts at the datalink level and works its way through the packet
+ * to the payload.  Each parsing function is passed the payload for the
+ * current packet and the collected headers.  The function must insert new
+ * data from the packet payload into the headers and repeat, with its payload,
+ * if possible.
+ */
+
 static VALUE
 capp_make_packet(int datalink, const struct pcap_pkthdr *header,
 	const u_char *data)
