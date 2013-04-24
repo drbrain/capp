@@ -237,10 +237,7 @@ class Capp::Packet
         raise NotImplementedError
       end.destination.dup
 
-    begin
-      destination = resolver.getname(destination).dup
-    rescue Resolv::ResolvError
-    end if resolver
+    destination = resolve destination, resolver
 
     if tcp? then
       destination << ".#{@tcp_header.destination_port}"
@@ -320,6 +317,14 @@ class Capp::Packet
     offset
   end
 
+  def resolve address, resolver # :nodoc:
+    return address unless resolver
+
+    resolver.getname(address).dup
+  rescue Resolv::ResolvError
+    address
+  end
+
   ##
   # Returns the source of the packet regardless of protocol.
   #
@@ -335,10 +340,7 @@ class Capp::Packet
         raise NotImplementedError
       end.source.dup
 
-    begin
-      source = resolver.getname(source).dup
-    rescue Resolv::ResolvError
-    end if resolver
+    source = resolve source, resolver
 
     if tcp? then
       source << ".#{@tcp_header.source_port}"
