@@ -16,7 +16,13 @@ class Capp::Packet
 
   ARPHeader = Struct.new :hardware, :protocol, :operation,
                          :sender_hardware_address, :sender_protocol_address,
-                         :target_hardware_address, :target_protocol_address
+                         :target_hardware_address, :target_protocol_address do
+    alias sha sender_hardware_address
+    alias spa sender_protocol_address
+    alias tha target_hardware_address
+    alias tpa target_protocol_address
+  end
+
   ##
   # 802.3 Ethernet header
 
@@ -34,6 +40,7 @@ class Capp::Packet
                           :id, :offset,
                           :ttl, :protocol, :checksum,
                           :source, :destination
+
   ##
   # IPv6 header.  See RFC 2460
 
@@ -47,6 +54,10 @@ class Capp::Packet
   TCPHeader = Struct.new :source_port, :destination_port,
                          :seq_number, :ack_number,
                          :offset, :flags, :window, :checksum, :urgent do
+
+    alias source      source_port
+    alias destination destination_port
+
     ##
     # Is the acknowledgment flag set?
 
@@ -108,7 +119,10 @@ class Capp::Packet
   ##
   # UDP header.  See RFC 768
 
-  UDPHeader = Struct.new :source_port, :destination_port, :length, :checksum
+  UDPHeader = Struct.new :source_port, :destination_port, :length, :checksum do
+    alias source      source_port
+    alias destination destination_port
+  end
 
   ##
   # Fake header for an unknown layer 3 protocol.  See also
