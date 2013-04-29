@@ -89,8 +89,10 @@ static VALUE
 capp_sockaddr_to_address(struct sockaddr *addr)
 {
     VALUE address, sockaddr_string;
-    struct sockaddr_dl *dl;
     struct ether_addr *ether;
+#ifdef HAVE_NET_IF_DL_H
+    struct sockaddr_dl *dl;
+#endif
 
     if (NULL == addr)
 	return Qnil;
