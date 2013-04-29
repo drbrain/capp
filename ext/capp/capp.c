@@ -132,11 +132,15 @@ capp_sockaddr_to_address(struct sockaddr *addr)
 	address =
 	    rb_funcall(cSocket, id_unpack_sockaddr_in, 1, sockaddr_string);
 	return rb_ary_entry(address, 1);
+#ifdef HAVE_NET_IF_DL_H
     case AF_LINK:
 	dl = (struct sockaddr_dl *)addr;
 	ether = (struct ether_addr *)LLADDR(dl);
 
 	return rb_usascii_str_new_cstr(ether_ntoa(ether));
+#endif
+    default:
+	return rb_usascii_str_new_cstr("(unsupported address family)");
     }
 
     return sockaddr_string;
