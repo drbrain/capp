@@ -65,13 +65,13 @@ class TestCapp < Capp::TestCase
 
     header = packet.arp_header
 
-    assert_equal Capp::ARPHRD_ETHER,  header.hardware
-    assert_equal Capp::ETHERTYPE_IP,  header.protocol
-    assert_equal Capp::ARPOP_REQUEST, header.operation
-    assert_equal '2:c0:de:1:1:1',     header.sender_hardware_address
-    assert_equal '10.0.2.1',          header.sender_protocol_address
-    assert_equal 'ff:ff:ff:ff:ff:ff', header.target_hardware_address
-    assert_equal '10.0.0.101',        header.target_protocol_address
+    assert_equal Capp::ARPHRD_ETHER,            header.hardware
+    assert_equal Capp::ETHERTYPE_IP,            header.protocol
+    assert_equal Capp::ARPOP_REQUEST,           header.operation
+    assert_match %r%\A0?2:c0:de:0?1:0?1:0?1\z%, header.sender_hardware_address
+    assert_equal '10.0.2.1',                    header.sender_protocol_address
+    assert_equal 'ff:ff:ff:ff:ff:ff',           header.target_hardware_address
+    assert_equal '10.0.0.101',                  header.target_protocol_address
   end
 
   def test_ipv4_header
