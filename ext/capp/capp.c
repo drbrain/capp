@@ -94,8 +94,8 @@ static VALUE
 capp_sockaddr_to_address(struct sockaddr *addr)
 {
     VALUE address, sockaddr_string;
-    struct ether_addr *ether;
 #ifdef HAVE_NET_IF_DL_H
+    struct ether_addr *ether;
     struct sockaddr_dl *dl;
 #endif
 
@@ -120,8 +120,6 @@ capp_sockaddr_to_address(struct sockaddr *addr)
     default:
 	return rb_usascii_str_new_cstr("(unsupported address family)");
     }
-
-    return sockaddr_string;
 }
 
 static VALUE
