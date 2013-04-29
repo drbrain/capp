@@ -15,6 +15,7 @@ require_header 'netinet/ip_icmp.h'
 require_header 'sys/socket.h'
 
 have_header 'net/if_dl.h'
+have_header 'netinet/ether.h'
 
 have_library 'pcap' or abort 'missing pcap library'
 

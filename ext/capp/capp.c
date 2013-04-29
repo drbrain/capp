@@ -19,6 +19,11 @@
 #include <net/if_dl.h>
 #endif
 
+/* Ethernet functions in the internet headers?  WTF Linux? */
+#ifdef HAVE_NETINET_ETHER_H
+#include <netinet/ether.h>
+#endif
+
 struct capp_loop_args {
     pcap_t *handle;
     int datalink;
