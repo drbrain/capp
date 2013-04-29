@@ -3,5 +3,7 @@
 /TAGS
 /doc
 /lib/capp/capp.bundle
+/lib/capp/capp.dll
+/lib/capp/capp.so
 /pkg
 /tmp
