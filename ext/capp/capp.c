@@ -1,11 +1,13 @@
 /*
- * The SWAPLONG macro and its use in capp_make_packet_null are copied from
- * tcpdump and used under the BSD license:
+ * The following items are copied from tcpdump adn used under the BSD license:
+ *
+ * * The SWAPLONG macro and its use in capp_make_packet_null
+ * * struct tcphdr and TH* macros
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *   
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *   2. Redistributions in binary form must reproduce the above copyright
@@ -15,7 +17,7 @@
  *   3. The names of the authors may not be used to endorse or promote
  *      products derived from this software without specific prior
  *      written permission.
- *   
+ *
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
@@ -29,19 +31,43 @@
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 #include <netinet/ip_icmp.h>
-#include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <sys/socket.h>
-
-#ifdef HAVE_NET_IF_DL_H
-#include <net/if_dl.h>
-#endif
 
 #include <ruby.h>
 #include <ruby/io.h>
 #include <ruby/thread.h>
 
 #include "extconf.h"
+
+#ifdef HAVE_NET_IF_DL_H
+#include <net/if_dl.h>
+#endif
+
+typedef u_int32_t tcp_seq;
+
+struct tcphdr {
+    u_int16_t th_sport;
+    u_int16_t th_dport;
+    tcp_seq   th_seq;
+    tcp_seq   th_ack;
+    u_int8_t  th_offx2;
+    u_int8_t  th_flags;
+    u_int16_t th_win;
+    u_int16_t th_sum;
+    u_int16_t th_urp;
+};
+
+#define TH_OFF(th)      (((th)->th_offx2 & 0xf0) >> 4)
+
+#define TH_FIN  0x01
+#define TH_SYN  0x02
+#define TH_RST  0x04
+#define TH_PUSH 0x08
+#define TH_ACK  0x10
+#define TH_URG  0x20
+#define TH_ECE  0x40
+#define TH_CWR  0x80
 
 struct capp_loop_args {
     pcap_t *handle;
@@ -412,7 +438,7 @@ capp_make_tcp_header(VALUE headers, const struct tcphdr *header)
     tcp_args[1] = UINT2NUM(ntohs(header->th_dport));
     tcp_args[2] = UINT2NUM(ntohl(header->th_seq));
     tcp_args[3] = UINT2NUM(ntohl(header->th_ack));
-    tcp_args[4] = UINT2NUM(header->th_off);
+    tcp_args[4] = UINT2NUM(TH_OFF(header));
     tcp_args[5] = UINT2NUM(header->th_flags);
     tcp_args[6] = UINT2NUM(ntohs(header->th_win));
     tcp_args[7] = UINT2NUM(ntohs(header->th_sum));
