@@ -11,6 +11,8 @@
 
 class Capp::Packet
 
+  ADDRESS_CACHE = {} # :nodoc:
+
   ##
   # ARP header.  See RFC 826
 
@@ -235,7 +237,7 @@ class Capp::Packet
         @ipv6_header
       else
         raise NotImplementedError
-      end.destination.dup
+      end.destination
 
     destination = resolve destination, resolver
 
@@ -320,9 +322,18 @@ class Capp::Packet
   def resolve address, resolver # :nodoc:
     return address unless resolver
 
-    resolver.getname(address).dup
+    if name = ADDRESS_CACHE[address] then
+      return name.dup
+    end
+
+    name = resolver.getname(address)
+
+    ADDRESS_CACHE[address] = name
+
+    name.dup
   rescue Resolv::ResolvError
-    address
+    ADDRESS_CACHE[address] = address
+    address.dup
   end
 
   ##
