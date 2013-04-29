@@ -19,6 +19,7 @@ HOE = Hoe.spec 'capp' do
   rdoc_locations << 'docs.seattlerb.org:/data/www/docs.seattlerb.org/capp/'
 
   self.extra_rdoc_files << 'ext/capp/capp.c'
+  self.spec_extras[:extensions] = 'ext/capp/extconf.rb'
 
   self.readme_file = 'README.rdoc'
 
