@@ -102,11 +102,14 @@ capp_sockaddr_to_address(struct sockaddr *addr)
     if (NULL == addr)
 	return Qnil;
 
-    sockaddr_string = rb_str_new((char *)addr, addr->sa_len);
-
     switch (addr->sa_family) {
     case AF_INET:
+	sockaddr_string = rb_str_new((char *)addr, sizeof(struct sockaddr_in));
+	address =
+	    rb_funcall(cSocket, id_unpack_sockaddr_in, 1, sockaddr_string);
+	return rb_ary_entry(address, 1);
     case AF_INET6:
+	sockaddr_string = rb_str_new((char *)addr, sizeof(struct sockaddr_in6));
 	address =
 	    rb_funcall(cSocket, id_unpack_sockaddr_in, 1, sockaddr_string);
 	return rb_ary_entry(address, 1);
