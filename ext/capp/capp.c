@@ -1,16 +1,16 @@
 #include <pcap/pcap.h>
 
-#include <arpa/inet.h>
+#include <sys/socket.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>
+#include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 #include <netinet/ip_icmp.h>
-#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include <ruby.h>
 #include <ruby/io.h>
-#include <ruby/thread.h>
 
 #include "extconf.h"
 #include "structs.h"
@@ -22,6 +22,10 @@
 /* Ethernet functions in the internet headers?  WTF Linux? */
 #ifdef HAVE_NETINET_ETHER_H
 #include <netinet/ether.h>
+#endif
+
+#ifdef HAVE_RUBY_THREAD_H
+#include <ruby/thread.h>
 #endif
 
 #ifndef ETHERTYPE_PAE
@@ -54,6 +58,14 @@
 
 #ifndef ARPOP_INVREPLY
 #define ARPOP_INVREPLY 9
+#endif
+
+#ifndef PCAP_NETMASK_UNKNOWN
+#define PCAP_NETMASK_UNKNOWN 0xFFFFFFFF
+#endif
+
+#ifndef NUM2USHORT
+#define NUM2USHORT (unsigned short)NUM2UINT
 #endif
 
 struct capp_loop_args {

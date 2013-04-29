@@ -1,23 +1,25 @@
 require 'mkmf'
 
+have_library 'pcap' or abort 'missing pcap library'
+
 def require_header header
   have_header header or abort "missing #{header}"
 end
 
 require_header 'pcap/pcap.h'
 
-require_header 'arpa/inet.h'
+require_header 'sys/socket.h'
 require_header 'net/ethernet.h'
 require_header 'net/if_arp.h'
 require_header 'netinet/ip.h'
 require_header 'netinet/ip6.h'
 require_header 'netinet/ip_icmp.h'
-require_header 'sys/socket.h'
+require_header 'arpa/inet.h'
 
 have_header 'net/if_dl.h'
 have_header 'netinet/ether.h'
 
-have_library 'pcap' or abort 'missing pcap library'
+have_header 'ruby/thread.h'
 
 have_macro 'RETURN_ENUMERATOR' or abort 'missing C enumerator support'
 
