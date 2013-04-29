@@ -5,7 +5,7 @@ require 'hoe'
 begin
   require 'rake/extensiontask'
 rescue LoadError => e
-  warn "\nmissing #{e.path} (for rake-compiler)"
+  warn "\nmissing #{e.path} (for rake-compiler)" if e.respond_to? :path
   warn "run: rake newb\n\n"
 end
 
