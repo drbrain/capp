@@ -26,13 +26,16 @@
 #include <arpa/inet.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>
-#include <net/if_dl.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <sys/socket.h>
+
+#ifdef HAVE_NET_IF_DL_H
+#include <net/if_dl.h>
+#endif
 
 #include <ruby.h>
 #include <ruby/io.h>
