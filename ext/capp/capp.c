@@ -24,6 +24,38 @@
 #include <netinet/ether.h>
 #endif
 
+#ifndef ETHERTYPE_PAE
+#define ETHERTYPE_PAE 0x888e
+#endif
+
+#ifndef ETHERTYPE_RSN_PREAUTH
+#define ETHERTYPE_RSN_PREAUTH 0x88c7
+#endif
+
+#ifndef ARPHDR_FRELAY
+#define ARPHDR_FRELAY 15
+#endif
+
+#ifndef ARPHDR_IEEE1934_EUI64
+#define ARPHDR_IEEE1934_EUI64 27
+#endif
+
+#ifndef ARPOP_REVREQUEST
+#define ARPOP_REVREQUEST 3
+#endif
+
+#ifndef ARPOP_REVREPLY
+#define ARPOP_REVREPLY 4
+#endif
+
+#ifndef ARPOP_INVREQUEST
+#define ARPOP_INVREQUEST 8
+#endif
+
+#ifndef ARPOP_INVREPLY
+#define ARPOP_INVREPLY 9
+#endif
+
 struct capp_loop_args {
     pcap_t *handle;
     int datalink;
