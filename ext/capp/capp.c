@@ -640,15 +640,20 @@ capp_make_packet_null(VALUE headers, const u_char *data)
 	protocol_family = SWAPLONG(protocol_family);
 
     switch (protocol_family) {
-    case PF_INET:
+    /* PF_INET */
+    case BSD_AFNUM_INET:
 	capp_make_ipv4_header(headers,
 		(const struct ip *)(data + protocol_family_size));
 	break;
-    case PF_INET6:
+    /* PF_INET6 */
+    case BSD_AFNUM_INET6_BSD:
+    case BSD_AFNUM_INET6_DARWIN:
+    case BSD_AFNUM_INET6_FREEBSD:
 	capp_make_ipv6_header(headers,
 		(const struct ip6_hdr *)(data + protocol_family_size));
 	break;
     default:
+	printf("PF_INET6: %d, family: %d\n", PF_INET6, protocol_family);
 	capp_make_unknown_layer3_header(headers, protocol_family_size);
 	break;
     }

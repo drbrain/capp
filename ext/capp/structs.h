@@ -68,3 +68,19 @@ struct udphdr {
 #define	SWAPLONG(y) \
 ((((y)&0xff)<<24) | (((y)&0xff00)<<8) | (((y)&0xff0000)>>8) | (((y)>>24)&0xff))
 
+/*
+ * BSD AF_ values.
+ *
+ * Unfortunately, the BSDs don't all use the same value for AF_INET6,
+ * so, because we want to be able to read captures from all of the BSDs,
+ * we check for all of them.
+ */
+#define BSD_AFNUM_INET          2
+#define BSD_AFNUM_NS            6  /* XEROX NS protocols */
+#define BSD_AFNUM_ISO           7
+#define BSD_AFNUM_APPLETALK     16
+#define BSD_AFNUM_IPX           23
+#define BSD_AFNUM_INET6_BSD     24 /* OpenBSD (and probably NetBSD), BSD/OS */
+#define BSD_AFNUM_INET6_FREEBSD 28
+#define BSD_AFNUM_INET6_DARWIN  30
+
