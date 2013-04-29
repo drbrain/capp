@@ -34,4 +34,12 @@ if Rake.const_defined? :ExtensionTask then
   task test: :compile
 end
 
+namespace :travis do
+  task :install_libpcap do
+    sh 'sudo apt-get install libpcap-dev'
+  end
+
+  task :before => :install_libpcap
+end
+
 # vim: syntax=ruby
