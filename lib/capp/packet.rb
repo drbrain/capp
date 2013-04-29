@@ -320,13 +320,13 @@ class Capp::Packet
   end
 
   def resolve address, resolver # :nodoc:
-    return address unless resolver
+    return address.dup unless resolver
 
     if name = ADDRESS_CACHE[address] then
       return name.dup
     end
 
-    name = resolver.getname(address)
+    name = resolver.getname address
 
     ADDRESS_CACHE[address] = name
 
