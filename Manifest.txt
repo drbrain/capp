@@ -5,6 +5,7 @@ README.rdoc
 Rakefile
 ext/capp/capp.c
 ext/capp/extconf.rb
+ext/capp/structs.h
 lib/capp.rb
 lib/capp/packet.rb
 lib/capp/test_case.rb
