@@ -423,11 +423,14 @@ capp_s_pcap_lib_version(VALUE klass)
  * call-seq:
  *   capp.datalinks #=> ["datalink name", ...]
  *
- * Returns datalink names for this capture instance:
+ * Returns the supported datalinks for this capture instance:
  *
  *   p Capp.live.datalinks
  *   #=> ["EN10MB", "PPI", "IEEE802_11_RADIO", "IEEE802_11",
  *        "IEEE802_11_RADIO_AVS", "RAW"]
+ *
+ * These can be used to change the datalink used to capture packets by using
+ * #datalink=
  */
 static VALUE
 capp_datalinks(VALUE self)
@@ -456,6 +459,29 @@ capp_datalinks(VALUE self)
     pcap_free_datalinks(dlt_buf);
 
     return datalink_ary;
+}
+
+/*
+ * call-seq:
+ *   capp.datalink #=> "datalink name"
+ *
+ * Returns datalink used for capturing packets.
+ *
+ *   Capp.live.datalink #=> ["EN10MB"]
+ */
+static VALUE
+capp_datalink(VALUE self)
+{
+    const char *datalink_name;
+    int dlt;
+    pcap_t *handle;
+
+    GetCapp(self, handle);
+
+    dlt = pcap_datalink(handle);
+
+    datalink_name = pcap_datalink_val_to_name(dlt);
+    return rb_usascii_str_new_cstr(datalink_name);
 }
 
 static VALUE
@@ -914,6 +940,38 @@ capp_savefile_minor_version(VALUE self)
 
 /*
  * call-seq:
+ *   capp.datalink = datalink_name
+ *
+ * Sets the link-layer header type to be used by the capture instance to the
+ * given +datalink_name+.  You can see the supported datalink names by calling
+ * #datalinks on the capture instance.
+ *
+ * Note that most possible datalink types do not have full support in Capp.
+ * You may receive the raw packet without any further extraction of packet
+ * fields.
+ */
+static VALUE
+capp_set_datalink(VALUE self, VALUE datalink)
+{
+    int dlt;
+    pcap_t *handle;
+    const char *datalink_name = StringValueCStr(datalink);
+
+    GetCapp(self, handle);
+
+    dlt = pcap_datalink_name_to_val(datalink_name);
+
+    if (-1 == dlt)
+	rb_raise(eCappError, "unrecognized datalink name %s", datalink_name);
+
+    if (pcap_set_datalink(handle, dlt))
+	rb_raise(eCappError, "%s", pcap_geterr(handle));
+
+    return datalink;
+}
+
+/*
+ * call-seq:
  *   capp.filter = filter -> self
  *
  * Sets the packet filter to the given +filter+ string.  The format is the
@@ -1129,6 +1187,8 @@ Init_capp(void) {
     rb_define_singleton_method(cCapp, "offline", capp_s_open_offline, 1);
     rb_define_singleton_method(cCapp, "pcap_lib_version", capp_s_pcap_lib_version, 0);
 
+    rb_define_method(cCapp, "datalink", capp_datalink, 0);
+    rb_define_method(cCapp, "datalink=", capp_set_datalink, 1);
     rb_define_method(cCapp, "datalinks", capp_datalinks, 0);
     rb_define_method(cCapp, "filter=", capp_set_filter, 1);
     rb_define_method(cCapp, "loop", capp_loop, 0);

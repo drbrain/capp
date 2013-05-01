@@ -53,6 +53,16 @@ class TestCapp < Capp::TestCase
     assert_match %r%\d\.%,  lib_version
   end
 
+  def test_datalink_equals
+    capp = Capp.offline UDP4_DUMP
+    links = capp.datalinks
+
+    capp.datalink = links.last
+
+    # this test might be useless for offline capture
+    assert_equal links.last, capp.datalink
+  end
+
   def test_datalinks
     links = Capp.offline(UDP4_DUMP).datalinks
 
