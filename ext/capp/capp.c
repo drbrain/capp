@@ -308,7 +308,7 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
     rb_scan_args(argc, argv, "04", &device, &snaplen, &promiscuous, &timeout);
 
     if (!RTEST(device))      device      = capp_s_default_device_name(klass);
-    if (!RTEST(snaplen))     snaplen     = INT2NUM(-1);
+    if (!RTEST(snaplen))     snaplen     = INT2NUM(65535);
     if (!RTEST(promiscuous)) promiscuous = Qtrue;
     if (!RTEST(timeout))     timeout     = INT2NUM(10);
 
