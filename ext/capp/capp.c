@@ -27,6 +27,11 @@
 
 #ifdef HAVE_RUBY_THREAD_H
 #include <ruby/thread.h>
+#else
+void *rb_thread_call_with_gvl(void *(*func)(void *), void *data1);
+
+void *rb_thread_call_without_gvl(void *(*func)(void *), void *data1,
+                                 rb_unblock_function_t *ubf, void *data2);
 #endif
 
 #ifndef ETHERTYPE_PAE
