@@ -1,13 +1,19 @@
 # coding: BINARY
 
 ##
-# Capp::Packet provides convenience for extracting data from packets.
+# Capp::Packet provides convenient extraction of data from packets.
 #
 # Packet objects are automatically created when a packet is read from the
-# opened interface when Capp understands what type of packet was read.
+# opened interface.  Unfortunately Capp does not understand every type of
+# packet.  If Capp doesn't understand your packet the layer 3 payload can be
+# retrieved from unknown_layer3_header.
 #
 # If Capp doesn't understand your packets you can extract the data by editing
 # capp.c and submitting a patch.  See README for the source code location.
+#
+# To look up IP source and destination names Resolv (from the ruby standard
+# library, require 'resolv') to avoid blocking on name lookups in a
+# cross-platform manner.
 
 class Capp::Packet
 
@@ -138,17 +144,17 @@ class Capp::Packet
   attr_reader :capture_length
 
   ##
-  # Captured portion of the packet.
+  # Captured portion of the entire packet including datalink layer.
 
   attr_reader :captured
 
   ##
-  # The ARP header
+  # The ARP header if this is an ARP packet.
 
   attr_reader :arp_header
 
   ##
-  # The Ethernet header
+  # The Ethernet header if this is an Ethernet packet.
 
   attr_reader :ethernet_header
 
@@ -159,27 +165,27 @@ class Capp::Packet
   attr_reader :protocols
 
   ##
-  # ICMP header
+  # ICMP header if this is an ICMP (v4) packet.
 
   attr_reader :icmp_header
 
   ##
-  # IPv4 header
+  # IPv4 header if this is an IPv4 packet.
 
   attr_reader :ipv4_header
 
   ##
-  # IPv6 header
+  # IPv6 header if this is an IPv6 packet.
 
   attr_reader :ipv6_header
 
   ##
-  # Total length of packet
+  # Total length of packet including the portion not captured.
 
   attr_reader :length
 
   ##
-  # TCP header
+  # TCP header if this is a TCP packet.
 
   attr_reader :tcp_header
 
@@ -189,13 +195,15 @@ class Capp::Packet
   attr_reader :timestamp
 
   ##
-  # UDP header
+  # UDP header if this is a UDP packet.
 
   attr_reader :udp_header
 
   ##
-  # Fake header for unknown layer 3 packets.  See the ethernet_header for the
-  # type, this only provides the payload offset of the packet content.
+  # Fake header for unknown layer 3 protocols.  The datalink type will
+  # indicate the layer 3 protocol.  For an Ethernet packet see the
+  # ethernet_header for the type, etc.  This method only provides the payload
+  # offset of the packet content.
 
   attr_reader :unknown_layer3_header
 
@@ -280,10 +288,10 @@ class Capp::Packet
   end
 
   ##
-  # The payload of the packet.  For a UDP packet captured from an Ethernet
-  # interface this is payload after the Ethernet, IP and UDP headers.  For a
-  # TCP packet captured from a loopback interface, this is the payload after
-  # the protocol family, IP and TCP headers.
+  # The payload of the packet.
+  #
+  # For example, for a UDP packet captured from an Ethernet interface this is
+  # payload after the Ethernet, IP and UDP headers
 
   def payload
     @captured[payload_offset, @capture_length]

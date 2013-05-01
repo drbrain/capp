@@ -15,19 +15,18 @@ require 'socket'
 #     # ...
 #   end
 #
-# #loop yields a Capp::Packet.
+# #loop yields a Capp::Packet object for each captured packet.
 #
-# To stop capturing packets return from the loop.
-#
-# If #loop is running in a separate thread call #stop on the Capp instance.
-# You can resume capturing packets by calling #loop again after #stop.
+# To stop capturing packets return (or break) from the loop, or call #stop on
+# the Capp instance.  You can resume capturing packets by calling #loop again
+# after #stop.
 #
 # To set a filter for only udp port 7647 (Rinda::RingFinger packets):
 #
 #   capp.filter = 'udp port 7647'
 #
-# The format for a filter rule is the same as for tcpdump(1).  See
-# pcap-filter(7) for the filter syntax.
+# The format for a filter rule is the same as for tcpdump.  See the
+# pcap-filter(7) man page for the filter syntax.
 #
 # You can use a Queue to capture packets in one thread and process them in
 # another:
@@ -71,20 +70,17 @@ class Capp
   Device  = Struct.new :name, :description, :addresses, :flags
 
   ##
-  # Datalink type for the Capp
-
-  attr_reader :datalink
-
-  ##
-  # Device name for the Capp, so long as it is live
+  # Device name packets are being captured from.  Only set for live packet
+  # captures.
 
   attr_reader :device
 
   ##
-  # Opens +device_or_file+ as an offline device it it is an IO or an existing
-  # file.
+  # Opens +device_or_file+ as an offline device if it is an IO or an existing
+  # file.  +args+ are ignored (as ::offline does not support any).
   #
-  # Opens +device_or_file+ as a live device otherwise, along with +args+.
+  # Opens +device_or_file+ as a live device otherwise, along with +args+.  See
+  # ::live for documentation on the additional arguments.
 
   def self.open device_or_file, *args
     if IO === device_or_file or File.exist? device_or_file then

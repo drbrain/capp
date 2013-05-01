@@ -198,14 +198,14 @@ capp_addr_to_addresses(pcap_addr_t *addrs)
  * call-seq:
  *   Capp.devices -> array
  *
- * Returns an Array containing the devices and their various addresses:
+ * Returns an Array containing the devices and their addresses:
  *
  *   [#<struct Capp::Address
  *     address="lo0",
  *     netmask=nil,
  *     broadcast=
  *      [#<struct Capp::Address
- *        address="",
+ *        address="0:0:0:0:0:0",
  *        netmask=nil,
  *        broadcast=nil,
  *        destination=nil>,
@@ -273,7 +273,7 @@ capp_s_devices(VALUE klass)
  *   Capp.live device, capture_length, promiscuous          -> capp
  *   Capp.live device, capture_length, promiscuous, timeout -> capp
  *
- * Creates a new Capp.
+ * Creates a Capp instance that will capture packets from a network device.
  *
  * +device+ is the device to capture packets from.  If the device is omitted
  * the default device (::default_device_name) is used.
@@ -282,13 +282,15 @@ capp_s_devices(VALUE klass)
  * a length is omitted 65535 is used.
  *
  * +promiscuous+ places the device in promiscuous mode when true, allowing you
- * to see packets not sent to or from the device.  Promiscuous mode is enabled
- * by default.
+ * to see packets not sent directly to or from the device.  Promiscuous mode
+ * is enabled by default.
  *
  * The +timeout+ is the number of maximum number of milliseconds that will
  * elapse between receiving a packet and yielding it to the block given to
  * #loop.  The default timeout is 10 milliseconds.  See #timeout= for further
  * discussion.
+ *
+ * After creating an instance use #loop to start capturing packets.
  */
 static VALUE
 capp_s_open_live(int argc, VALUE *argv, VALUE klass)
@@ -328,11 +330,11 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
 
 /*
  * call-seq:
- *   Capp.offline file     -> capp
  *   Capp.offline filename -> capp
+ *   Capp.offline io       -> capp
  *
- * Creates an offline Capp that reads from a pcap savefile.  A savefile may be
- * loaded from an open +file+:
+ * Creates an Capp that instance that captures packets from a pcap savefile.
+ * A savefile may be loaded from an open +file+:
  *
  *   open 'savefile' do |io|
  *     capp = Capp.offline io
@@ -342,6 +344,8 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
  * Or a +filename+:
  *
  *   capp = Capp.offline 'savefile'
+ *
+ * After creating an instance use #loop to start capturing packets.
  *
  * NOTE:  When you give Capp.offline a Ruby IO you should avoid buffered
  * reads or writes to the IO due to limitations of libpcap.  (Using a pipe and
@@ -798,6 +802,10 @@ capp_loop_run(VALUE self)
  * Packets are instances of Capp::Packet.
  *
  * If no block is given an enumerator is returned.
+ *
+ * You can stop capturing packets by returning from the block (or using break)
+ * or by calling #stop on the instance.  Packet capture can be restarted
+ * later.
  */
 static VALUE
 capp_loop(VALUE self)
@@ -814,7 +822,8 @@ capp_loop(VALUE self)
  *   capp.filter = filter -> self
  *
  * Sets the packet filter to the given +filter+ string.  The format is the
- * same format as tcpdump(1).  You can see the syntax at pcap-filter(7).
+ * same format as for tcpdump.  Read the pcap-filter(7) man page for
+ * documentation on the filter syntax.
  */
 static VALUE
 capp_set_filter(VALUE self, VALUE filter)
@@ -862,7 +871,8 @@ capp_set_filter(VALUE self, VALUE filter)
  * call-seq:
  *   capp.promiscuous = boolean
  *
- * Enables or disables promiscuous mode.
+ * Enables or disables promiscuous mode.  When promiscuous mode is enabled
+ * packets that were not sent directly to the device will be captured.
  */
 static VALUE
 capp_set_promisc(VALUE self, VALUE promiscuous)
@@ -880,9 +890,9 @@ capp_set_promisc(VALUE self, VALUE promiscuous)
 
 /*
  * call-seq:
- *   capp.snaplen = length
+ *   capp.snaplen = bytes
  *
- * Sets the packet capture length to +length+.
+ * Sets the number of +bytes+ captured from each packet.
  */
 static VALUE
 capp_set_snaplen(VALUE self, VALUE snaplen)
@@ -901,11 +911,8 @@ capp_set_snaplen(VALUE self, VALUE snaplen)
  * call-seq:
  *   capp.timeout = milliseconds
  *
- * Sets the timeout to +milliseconds+
- *
- * The +timeout+ is the number of maximum number of milliseconds that will
- * elapse between receiving a packet and yielding it to the block given to
- * #loop.
+ * Sets the maximum amount of time in +milliseconds+ that will elapse between 
+ * receiving a packet and yielding it to #loop.
  *
  * Reducing the timeout will increase responsiveness as pcap_loop(3) must
  * "check in" more frequently while increasing the timeout will reduce

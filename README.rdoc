@@ -6,12 +6,12 @@ bugs :: https://github.com/drbrain/capp/issues
 
 == Description
 
-Capp is a packet capture library that wraps pcap.  Capp provides a simple API
-for capturing packets and automatically unpacks common packets (including
+Capp is a packet capture library that wraps libpcap.  Capp provides a simple
+API for capturing packets and automatically unpacks common packets (including
 Ethernet, IP, TCP, UDP and ICMP).  Capp also cooperates with other threads
 better than other pcap wrapper libraries for ruby.
 
-== Synopsis
+== Examples
 
 Basic single-thread packet capturing:
 
@@ -40,7 +40,7 @@ Basic multi-thread packet capturing:
 
 == Requirements
 
-* libpcap
+* libpcap 0.8 or newer
 
 == Install
 
@@ -51,9 +51,11 @@ Basic multi-thread packet capturing:
 After checking out the source, run:
 
   $ rake newb
+  $ rake newb
 
 This task will install any missing dependencies, run the tests/specs,
-and generate the RDoc.
+and generate the RDoc.  You need to run it twice as the first run installs the
+dependencies needed to compile the C extension.
 
 == License
 
