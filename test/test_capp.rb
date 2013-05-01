@@ -53,6 +53,12 @@ class TestCapp < Capp::TestCase
     assert_match %r%\d\.%,  lib_version
   end
 
+  def test_datalinks
+    links = Capp.offline(UDP4_DUMP).datalinks
+
+    assert_equal %w[EN10MB], links
+  end
+
   def test_ethernet_header
     capp = Capp.offline UDP4_DUMP
 

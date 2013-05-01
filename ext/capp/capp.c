@@ -419,6 +419,45 @@ capp_s_pcap_lib_version(VALUE klass)
     return rb_usascii_str_new_cstr(pcap_lib_version());
 }
 
+/*
+ * call-seq:
+ *   capp.datalinks #=> ["datalink name", ...]
+ *
+ * Returns datalink names for this capture instance:
+ *
+ *   p Capp.live.datalinks
+ *   #=> ["EN10MB", "PPI", "IEEE802_11_RADIO", "IEEE802_11",
+ *        "IEEE802_11_RADIO_AVS", "RAW"]
+ */
+static VALUE
+capp_datalinks(VALUE self)
+{
+    int *dlt_buf;
+    pcap_t *handle;
+    VALUE datalink_ary;
+    int i, datalink_count;
+
+    GetCapp(self, handle);
+
+    datalink_count = pcap_list_datalinks(handle, &dlt_buf);
+
+    if (datalink_count == -1)
+	rb_raise(eCappError, "%s", pcap_geterr(handle));
+
+    datalink_ary = rb_ary_new2(datalink_count);
+
+    for (i = 0; i < datalink_count; i++) {
+	const char *datalink_name_cstr = pcap_datalink_val_to_name(dlt_buf[i]);
+	VALUE datalink_name = rb_usascii_str_new_cstr(datalink_name_cstr);
+
+	rb_ary_push(datalink_ary, datalink_name);
+    }
+
+    pcap_free_datalinks(dlt_buf);
+
+    return datalink_ary;
+}
+
 static VALUE
 capp_make_ether_str(const struct ether_addr *addr)
 {
@@ -855,7 +894,6 @@ capp_savefile_major_version(VALUE self)
     return INT2NUM(pcap_major_version(handle));
 }
 
-
 /*
  * call-seq:
  *   capp.savefile_minor_version -> integer
@@ -1091,6 +1129,7 @@ Init_capp(void) {
     rb_define_singleton_method(cCapp, "offline", capp_s_open_offline, 1);
     rb_define_singleton_method(cCapp, "pcap_lib_version", capp_s_pcap_lib_version, 0);
 
+    rb_define_method(cCapp, "datalinks", capp_datalinks, 0);
     rb_define_method(cCapp, "filter=", capp_set_filter, 1);
     rb_define_method(cCapp, "loop", capp_loop, 0);
     rb_define_method(cCapp, "promiscuous=", capp_set_promisc, 1);
