@@ -39,18 +39,18 @@ namespace :travis do
     sh 'sudo apt-get install libpcap-dev'
   end
 
-  Rake::TestTask.new :root_test do |t|
+  Rake::TestTask.new root_test: %w[compile] do |t|
     t.libs << 'lib'
     t.test_files = FileList['test/test_capp_root.rb']
   end
 
   task :run_root_test do
-    sh 'sudo', 'rake', 'travis:root_test'
+    sh 'sudo', 'rake', '-t', 'travis:root_test'
   end
 
-  task :before => :install_libpcap
+  task before: %w[install_libpcap]
 end
 
-task :travis => 'travis:run_root_test'
+task travis: %w[travis:run_root_test]
 
 # vim: syntax=ruby
