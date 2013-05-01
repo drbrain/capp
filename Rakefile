@@ -46,7 +46,7 @@ namespace :travis do
 
   task :run_root_test do
     ruby = Gem.ruby
-    sh 'sudo', ruby, '-S', 'rake', '-t', 'travis:root_test'
+    sh 'sudo', '-E', ruby, '-S', 'rake', '-t', 'travis:root_test'
   end
 
   task before: %w[install_libpcap]
