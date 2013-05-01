@@ -46,6 +46,13 @@ class TestCapp < Capp::TestCase
     assert capp.loop.first
   end
 
+  def test_class_pcap_version
+    pcap_version = Capp.pcap_version
+
+    assert_match 'libpcap', pcap_version
+    assert_match %r%\d\.%,  pcap_version
+  end
+
   def test_ethernet_header
     capp = Capp.offline UDP4_DUMP
 

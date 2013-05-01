@@ -404,6 +404,21 @@ capp_s_open_offline(VALUE klass, VALUE file)
     return obj;
 }
 
+/*
+ * call-seq:
+ *   Capp.pcap_version -> pcap version string
+ *
+ * Returns the pcap version string
+ *
+ */
+static VALUE
+capp_s_pcap_version(VALUE klass)
+{
+    VALUE pcap_version = rb_usascii_str_new_cstr(pcap_lib_version());
+
+    return pcap_version;
+}
+
 static VALUE
 capp_make_ether_str(const struct ether_addr *addr)
 {
@@ -1037,6 +1052,7 @@ Init_capp(void) {
     rb_define_singleton_method(cCapp, "devices", capp_s_devices, 0);
     rb_define_singleton_method(cCapp, "live", capp_s_open_live, -1);
     rb_define_singleton_method(cCapp, "offline", capp_s_open_offline, 1);
+    rb_define_singleton_method(cCapp, "pcap_version", capp_s_pcap_version, 0);
 
     rb_define_method(cCapp, "filter=", capp_set_filter, 1);
     rb_define_method(cCapp, "loop", capp_loop, 0);
