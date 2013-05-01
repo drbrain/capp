@@ -260,7 +260,7 @@ capp_s_devices(VALUE klass)
 	dev_args[2] = capp_addr_to_addresses(iface->addresses);
 	dev_args[3] = UINT2NUM(iface->flags);
 
-	device = rb_class_new_instance(4, dev_args, cCappAddress);
+	device = rb_class_new_instance(4, dev_args, cCappDevice);
 
 	rb_ary_push(devices, device);
     }

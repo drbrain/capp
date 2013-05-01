@@ -2,6 +2,22 @@ require 'capp/test_case'
 
 class TestCapp < Capp::TestCase
 
+  def test_class_drop_privileges_not_root
+    dir  = Dir.pwd
+    orig = Etc.getpwuid
+
+    skip 'you are root' if Process.uid.zero? and Process.euid.zero?
+
+    Capp.drop_privileges 'nobody'
+
+    user = Etc.getpwuid
+
+    assert_equal orig.uid, user.uid 
+    assert_equal orig.gid, user.gid 
+
+    assert_equal dir, Dir.pwd
+  end
+
   def test_class_offline_file
     open ICMP4_DUMP do |io|
       capp = Capp.offline io

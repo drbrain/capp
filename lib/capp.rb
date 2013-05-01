@@ -67,13 +67,75 @@ class Capp
   ##
   # A device which Capp can listen on, returned by Capp::devices
 
-  Device  = Struct.new :name, :description, :addresses, :flags
+  Device = Struct.new :name, :description, :addresses, :flags do
+
+    ##
+    # Creates a new packet capture device for this device sending the given
+    # +args+ to Capp.open.
+
+    def open *args
+      Capp.open name, *args
+    end
+
+  end
 
   ##
   # Device name packets are being captured from.  Only set for live packet
   # captures.
 
   attr_reader :device
+
+  ##
+  # Drops root privileges to the given +run_as_user+ and optionally chroots to
+  # +run_as_directory+.  Use this method after creating a packet capture
+  # instance to improve security.
+  #
+  # Returns true if privileges are dropped, raises a Capp::Error if privileges
+  # could not be dropped and returns a false value if there was no need to
+  # drop privileges.
+  #
+  # You will be able to start and stop packet capture but not create new
+  # packet capture instances after dropping privileges.
+
+  def self.drop_privileges run_as_user, run_as_directory = nil
+    return unless Process.uid.zero? and Process.euid.zero?
+    return unless run_as_user or run_as_directory
+
+    raise Capp::Error, 'chroot without dropping root is insecure' if
+      run_as_directory and not run_as_user
+
+    require 'etc'
+
+    begin
+      pw = if Integer === run_as_user then
+             Etc.getpwuid run_as_user
+           else
+             Etc.getpwnam run_as_user
+           end
+    rescue ArgumentError => e
+      raise Capp::Error, "could not find user #{run_as_user}"
+    end
+
+    if run_as_directory then
+      begin
+        Dir.chroot run_as_directory
+        Dir.chdir '/'
+      rescue Errno::ENOENT => e
+        raise Capp::Error, "could not chroot to #{run_as_directory} " +
+                           "or change to chroot directory"
+      end
+    end
+
+    begin
+      Process.gid = pw.gid
+      Process.uid = pw.uid
+    rescue Errno::EPERM => e
+      raise Capp::Error, "unable to drop privileges to #{run_as_user} " +
+                         "(#{e.message})"
+    end
+
+    true
+  end
 
   ##
   # Opens +device_or_file+ as an offline device if it is an IO or an existing
