@@ -46,11 +46,29 @@ class TestCapp < Capp::TestCase
     assert capp.loop.first
   end
 
-  def test_class_pcap_version
-    pcap_version = Capp.pcap_version
+  def test_class_pcap_lib_version
+    lib_version = Capp.pcap_lib_version
 
-    assert_match 'libpcap', pcap_version
-    assert_match %r%\d\.%,  pcap_version
+    assert_match 'libpcap', lib_version
+    assert_match %r%\d\.%,  lib_version
+  end
+
+  def test_savefile_major_version
+    major_version = Capp.offline(UDP4_DUMP).savefile_major_version
+
+    assert_equal 2, major_version
+  end
+
+  def test_savefile_minor_version
+    minor_version = Capp.offline(UDP4_DUMP).savefile_minor_version
+
+    assert_equal 4, minor_version
+  end
+
+  def test_savefile_version
+    version = Capp.offline(UDP4_DUMP).savefile_version
+
+    assert_equal '2.4', version
   end
 
   def test_ethernet_header

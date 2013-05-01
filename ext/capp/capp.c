@@ -406,17 +406,17 @@ capp_s_open_offline(VALUE klass, VALUE file)
 
 /*
  * call-seq:
- *   Capp.pcap_version -> pcap version string
+ *   Capp.pcap_lib_version -> libpcap version string
  *
- * Returns the pcap version string
+ * Returns the libpcap version string:
+ *
+ *   Capp.pcap_lib_version #=> "libpcap version 1.1.1"
  *
  */
 static VALUE
-capp_s_pcap_version(VALUE klass)
+capp_s_pcap_lib_version(VALUE klass)
 {
-    VALUE pcap_version = rb_usascii_str_new_cstr(pcap_lib_version());
-
-    return pcap_version;
+    return rb_usascii_str_new_cstr(pcap_lib_version());
 }
 
 static VALUE
@@ -839,6 +839,43 @@ capp_loop(VALUE self)
 
 /*
  * call-seq:
+ *   capp.savefile_major_version -> integer
+ *
+ * When called on a capture instance created from a savefile, returns the
+ * major version of the savefile.  When called on a live capture instance it
+ * returns a meaningless value.
+ */
+static VALUE
+capp_savefile_major_version(VALUE self)
+{
+    pcap_t *handle;
+
+    GetCapp(self, handle);
+
+    return INT2NUM(pcap_major_version(handle));
+}
+
+
+/*
+ * call-seq:
+ *   capp.savefile_minor_version -> integer
+ *
+ * When called on a capture instance created from a savefile, returns the
+ * minor version of the savefile.  When called on a live capture instance it
+ * returns a meaningless value.
+ */
+static VALUE
+capp_savefile_minor_version(VALUE self)
+{
+    pcap_t *handle;
+
+    GetCapp(self, handle);
+
+    return INT2NUM(pcap_minor_version(handle));
+}
+
+/*
+ * call-seq:
  *   capp.filter = filter -> self
  *
  * Sets the packet filter to the given +filter+ string.  The format is the
@@ -1052,11 +1089,13 @@ Init_capp(void) {
     rb_define_singleton_method(cCapp, "devices", capp_s_devices, 0);
     rb_define_singleton_method(cCapp, "live", capp_s_open_live, -1);
     rb_define_singleton_method(cCapp, "offline", capp_s_open_offline, 1);
-    rb_define_singleton_method(cCapp, "pcap_version", capp_s_pcap_version, 0);
+    rb_define_singleton_method(cCapp, "pcap_lib_version", capp_s_pcap_lib_version, 0);
 
     rb_define_method(cCapp, "filter=", capp_set_filter, 1);
     rb_define_method(cCapp, "loop", capp_loop, 0);
     rb_define_method(cCapp, "promiscuous=", capp_set_promisc, 1);
+    rb_define_method(cCapp, "savefile_major_version", capp_savefile_major_version, 0);
+    rb_define_method(cCapp, "savefile_minor_version", capp_savefile_minor_version, 0);
     rb_define_method(cCapp, "snaplen=", capp_set_snaplen, 1);
     rb_define_method(cCapp, "stats", capp_stats, 0);
     rb_define_method(cCapp, "stop", capp_stop, 0);

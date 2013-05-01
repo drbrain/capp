@@ -152,6 +152,15 @@ class Capp
     end
   end
 
+  ##
+  # When called on a capture instance created from a savefile, returns the
+  # version of the savefile.  When called on a live capture instance it
+  # returns a meaningless value.
+
+  def savefile_version
+    "#{savefile_major_version}.#{savefile_minor_version}"
+  end
+
 end
 
 require 'capp/packet'
