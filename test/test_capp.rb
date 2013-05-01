@@ -53,24 +53,6 @@ class TestCapp < Capp::TestCase
     assert_match %r%\d\.%,  lib_version
   end
 
-  def test_savefile_major_version
-    major_version = Capp.offline(UDP4_DUMP).savefile_major_version
-
-    assert_equal 2, major_version
-  end
-
-  def test_savefile_minor_version
-    minor_version = Capp.offline(UDP4_DUMP).savefile_minor_version
-
-    assert_equal 4, minor_version
-  end
-
-  def test_savefile_version
-    version = Capp.offline(UDP4_DUMP).savefile_version
-
-    assert_equal '2.4', version
-  end
-
   def test_ethernet_header
     capp = Capp.offline UDP4_DUMP
 
@@ -186,6 +168,24 @@ class TestCapp < Capp::TestCase
     end
 
     assert_equal 4, packets.size
+  end
+
+  def test_savefile_major_version
+    major_version = Capp.offline(UDP4_DUMP).savefile_major_version
+
+    assert_equal 2, major_version
+  end
+
+  def test_savefile_minor_version
+    minor_version = Capp.offline(UDP4_DUMP).savefile_minor_version
+
+    assert_equal 4, minor_version
+  end
+
+  def test_savefile_version
+    version = Capp.offline(UDP4_DUMP).savefile_version
+
+    assert_equal '2.4', version
   end
 
   def test_stats
