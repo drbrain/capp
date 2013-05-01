@@ -1,4 +1,5 @@
 .autotest
+.hoerc
 History.rdoc
 Manifest.txt
 README.rdoc

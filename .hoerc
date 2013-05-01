@@ -1,0 +1,2 @@
+---
+exclude: !ruby/regexp /TAGS|CVS|tmp|\.(swp|svn|DS_Store|cvsignore|git|chef|travis|bundle|so)/
