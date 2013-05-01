@@ -40,7 +40,7 @@ Basic multi-thread packet capturing:
 
 == Requirements
 
-* libpcap 0.8 or newer
+* libpcap, tested with 1.1.1 and 1.3.0
 
 == Install
 
