@@ -1,5 +1,6 @@
 #include <pcap/pcap.h>
 
+#include <unistd.h>
 #include <sys/socket.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>
@@ -341,6 +342,10 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
  * Or a +filename+:
  *
  *   capp = Capp.offline 'savefile'
+ *
+ * NOTE:  When you give Capp.offline a Ruby IO you should avoid buffered
+ * reads or writes to the IO due to limitations of libpcap.  (Using a pipe and
+ * reading from one end and writing to the other is fine, of course.)
  */
 static VALUE
 capp_s_open_offline(VALUE klass, VALUE file)
@@ -352,11 +357,23 @@ capp_s_open_offline(VALUE klass, VALUE file)
     *errbuf = '\0';
 
     if (TYPE(file) == T_FILE) {
+	FILE *c_file;
 	rb_io_t *fptr;
+	int fd;
 
 	GetOpenFile(file, fptr);
 
-	handle = pcap_fopen_offline(rb_io_stdio_file(fptr), errbuf);
+	fd = dup(fptr->fd);
+
+	if (-1 == fd)
+	    rb_sys_fail("dup");
+
+	c_file = fdopen(fd, "r");
+
+	if (NULL == c_file)
+	    rb_sys_fail("fdopen");
+
+	handle = pcap_fopen_offline(c_file, errbuf);
     } else {
 	handle = pcap_open_offline(StringValueCStr(file), errbuf);
     }
@@ -653,7 +670,6 @@ capp_make_packet_null(VALUE headers, const u_char *data)
 		(const struct ip6_hdr *)(data + protocol_family_size));
 	break;
     default:
-	printf("PF_INET6: %d, family: %d\n", PF_INET6, protocol_family);
 	capp_make_unknown_layer3_header(headers, protocol_family_size);
 	break;
     }
