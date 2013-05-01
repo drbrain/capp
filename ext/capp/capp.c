@@ -789,9 +789,6 @@ capp_make_packet(int datalink, const struct pcap_pkthdr *header,
     case DLT_EN10MB:
 	capp_make_packet_ethernet(headers, data);
 	break;
-    default:
-	rb_raise(rb_eNotImpError, "unknown datalink type %d", datalink);
-	break; /* unreachable */
     }
 
     packet_args[0] = rb_time_new(header->ts.tv_sec, header->ts.tv_usec);
