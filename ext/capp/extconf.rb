@@ -1,5 +1,8 @@
 require 'mkmf'
 
+$CFLAGS << " #{ENV['CFLAGS']}" if ENV['CFLAGS']
+$LIBS   << " #{ENV['LIBS']}"   if ENV['LIBS']
+
 have_library 'pcap' or abort 'missing pcap library'
 
 def require_header header
