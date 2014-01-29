@@ -83,8 +83,8 @@ class TestCappRoot < Capp::TestCase
 
       user = Etc.getpwuid
 
-      abort 'user unchanged'  if @root.uid == user.uid 
-      abort 'group unchanged' if @root.gid == user.gid 
+      abort 'user unchanged'  if @root.uid == user.uid
+      abort 'group unchanged' if @root.gid == user.gid
 
       begin
         File.stat dir
@@ -125,8 +125,8 @@ class TestCappRoot < Capp::TestCase
 
       user = Etc.getpwuid
 
-      abort 'user unchanged'  if @root.uid == user.uid 
-      abort 'group unchanged' if @root.gid == user.gid 
+      abort 'user unchanged'  if @root.uid == user.uid
+      abort 'group unchanged' if @root.gid == user.gid
 
       begin
         File.stat dir

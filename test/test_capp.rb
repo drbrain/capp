@@ -12,8 +12,8 @@ class TestCapp < Capp::TestCase
 
     user = Etc.getpwuid
 
-    assert_equal orig.uid, user.uid 
-    assert_equal orig.gid, user.gid 
+    assert_equal orig.uid, user.uid
+    assert_equal orig.gid, user.gid
 
     assert_equal dir, Dir.pwd
   end
