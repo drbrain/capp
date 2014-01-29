@@ -28,6 +28,8 @@ HOE = Hoe.spec 'capp' do
 end
 
 if Rake.const_defined? :ExtensionTask then
+  HOE.spec.files.delete_if { |file| file == '.gemtest' }
+
   Rake::ExtensionTask.new 'capp', HOE.spec do |ext|
     ext.lib_dir = 'lib/capp'
   end
