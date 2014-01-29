@@ -1,7 +1,7 @@
 require 'minitest/autorun'
 require 'capp'
 
-class TestCappPacketTCPHeader < MiniTest::Unit::TestCase
+class TestCappPacketTCPHeader < Capp::TestCase
 
   def test_ack_eh
     header = Capp::Packet::TCPHeader.new(nil, nil, nil, nil,

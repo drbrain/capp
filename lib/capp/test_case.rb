@@ -9,7 +9,7 @@ require 'capp'
 #
 #   tcpdump -r test/my.pcap [your specific capture arguments]
 
-class Capp::TestCase < MiniTest::Unit::TestCase
+class Capp::TestCase < Minitest::Test
 
   ##
   # An ARP packet
