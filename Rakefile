@@ -15,6 +15,7 @@ Hoe.plugin :travis
 
 HOE = Hoe.spec 'capp' do
   developer 'Eric Hodel', 'drbrain@segment7.net'
+  license 'MIT'
 
   rdoc_locations << 'docs.seattlerb.org:/data/www/docs.seattlerb.org/capp/'
 
