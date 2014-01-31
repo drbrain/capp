@@ -11,6 +11,7 @@ end
 
 PARSER_FILES = %w[
   lib/capp/bpf.rb
+  lib/capp/bpf/scanner.rex.rb
 ]
 
 Hoe.plugin :git
@@ -32,6 +33,7 @@ HOE = Hoe.spec 'capp' do
 
   dependency 'rake-compiler', '~> 0.8', :developer
   dependency 'racc',          '~> 1.4', :developer
+  dependency 'oedipus_lex',   '~> 2.1', :developer
 end
 
 if Rake.const_defined? :ExtensionTask then
@@ -45,10 +47,19 @@ if Rake.const_defined? :ExtensionTask then
 end
 
 task generate: :parser
-task parser:   ['lib/capp/bpf.rb']
+task parser:   [:lexer, 'lib/capp/bpf.rb']
+task lexer:    'lib/capp/bpf/scanner.rex.rb'
 
 task default: :generate
 task test:    :generate
+
+begin
+  require 'oedipus_lex'
+  Rake.application.rake_require 'oedipus_lex'
+rescue LoadError => e
+  warn "\nmissing #{e.path} (for oedipus_lex)" if e.respond_to? :path
+  warn "run: rake newb\n\n"
+end
 
 rule '.rb' => '.ry' do |t|
   racc = Gem.bin_path 'racc', 'racc'

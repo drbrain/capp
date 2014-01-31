@@ -3,6 +3,7 @@
 /TAGS
 /doc
 /lib/capp/bpf.rb
+/lib/capp/bpf/scanner.rex.rb
 /lib/capp/capp.bundle
 /lib/capp/capp.dll
 /lib/capp/capp.so
