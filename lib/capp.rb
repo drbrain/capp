@@ -163,6 +163,7 @@ class Capp
 
 end
 
+require 'capp/bpf'
 require 'capp/packet'
 require 'capp/capp'
 

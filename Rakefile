@@ -9,6 +9,10 @@ rescue LoadError => e
   warn "run: rake newb\n\n"
 end
 
+PARSER_FILES = %w[
+  lib/capp/bpf.rb
+]
+
 Hoe.plugin :git
 Hoe.plugin :minitest
 Hoe.plugin :travis
@@ -19,12 +23,15 @@ HOE = Hoe.spec 'capp' do
 
   rdoc_locations << 'docs.seattlerb.org:/data/www/docs.seattlerb.org/capp/'
 
+  self.clean_globs += PARSER_FILES
+
   self.extra_rdoc_files << 'ext/capp/capp.c'
   self.spec_extras[:extensions] = 'ext/capp/extconf.rb'
 
   self.readme_file = 'README.rdoc'
 
-  self.extra_dev_deps << ['rake-compiler', '~> 0.8']
+  dependency 'rake-compiler', '~> 0.8', :developer
+  dependency 'racc',          '~> 1.4', :developer
 end
 
 if Rake.const_defined? :ExtensionTask then
@@ -35,6 +42,18 @@ if Rake.const_defined? :ExtensionTask then
   end
 
   task test: :compile
+end
+
+task generate: :parser
+task parser:   ['lib/capp/bpf.rb']
+
+task default: :generate
+task test:    :generate
+
+rule '.rb' => '.ry' do |t|
+  racc = Gem.bin_path 'racc', 'racc'
+
+  ruby "-rubygems #{racc} -l -o #{t.name} #{t.source}"
 end
 
 namespace :travis do

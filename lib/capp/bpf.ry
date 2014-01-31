@@ -1,0 +1,535 @@
+# Copyright (c) 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996
+#	The Regents of the University of California.  All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that: (1) source code distributions
+# retain the above copyright notice and this paragraph in its entirety, (2)
+# distributions including binary code include the above copyright notice and
+# this paragraph in its entirety in the documentation or other materials
+# provided with the distribution, and (3) all advertising materials mentioning
+# features or use of this software display the following acknowledgement:
+# ``This product includes software developed by the University of California,
+# Lawrence Berkeley Laboratory and its contributors.'' Neither the name of
+# the University nor the names of its contributors may be used to endorse
+# or promote products derived from this software without specific prior
+# written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+class BPF
+
+  #type <blk> expr id nid pid term rterm qid
+  #type <blk> head
+  #type <i>   pqual dqual aqual ndaqual
+  #type <a>   arth narth
+  #type <i>   byteop pname pnum relop irelop
+  #type <blk> and or paren not null prog
+  #type <rblk>other pfvar p80211
+  #type <i>   atmtype atmmultitype
+  #type <blk> atmfield
+  #type <blk> atmfieldvalue atmvalue atmlistvalue
+  #type <i>   mtp2type
+  #type <blk> mtp3field
+  #type <blk> mtp3fieldvalue mtp3value mtp3listvalue
+
+  token DST SRC HOST GATEWAY
+  token NET NETMASK PORT PORTRANGE LESS GREATER PROTO PROTOCHAIN CBYTE
+  token ARP RARP IP SCTP TCP UDP ICMP IGMP IGRP PIM VRRP CARP
+  token ATALK AARP DECNET LAT SCA MOPRC MOPDL
+  token TK_BROADCAST TK_MULTICAST
+  token NUM INBOUND OUTBOUND
+  token PF_IFNAME PF_RSET PF_RNR PF_SRNR PF_REASON PF_ACTION
+  token TYPE SUBTYPE DIR ADDR1 ADDR2 ADDR3 ADDR4 RA TA
+  token LINK
+  token GEQ LEQ NEQ
+  token ID EID HID HID6 AID
+  token LSH RSH
+  token LEN
+  token IPV6 ICMPV6 AH ESP
+  token VLAN MPLS
+  token PPPOED PPPOES
+  token ISO ESIS CLNP ISIS L1 L2 IIH LSP SNP CSNP PSNP
+  token STP
+  token IPX
+  token NETBEUI
+  token LANE LLC METAC BCC SC ILMIC OAMF4EC OAMF4SC
+  token OAM OAMF4 CONNECTMSG METACONNECT
+  token VPI VCI
+  token RADIO
+  token FISU LSSU MSU HFISU HLSSU HMSU
+  token SIO OPC DPC SLS HSIO HOPC HDPC HSLS
+
+  #type <s> ID
+  #type <e> EID
+  #type <e> AID
+  #type <s> HID HID6
+  #type <i> NUM action reason type subtype type_subtype dir
+
+  preclow
+    left OR AND
+    nonassoc  '!'
+    left '|'
+    left '&'
+    left LSH RSH
+    left '+' '-'
+    left '*' '/'
+    nonassoc UMINUS
+  prechigh
+
+  rule
+    prog : null expr { finish_parse(val[2].b); }
+         | null
+         ;
+
+    null : { result = nil }
+         ;
+
+    expr : term
+         | expr and term  { gen_and(val[1].b, val[3].b); result = val[3]; }
+         | expr and id    { gen_and(val[1].b, val[3].b); result = val[3]; }
+         | expr or  term  { gen_or(val[1].b, val[3].b); result = val[3]; }
+         | expr or  id    { gen_or(val[1].b, val[3].b); result = val[3]; }
+         ;
+
+    and : AND { result = :AND }
+        ;
+
+    or : OR { result = :OR }
+       ;
+
+    id: nid
+     | pnum { result.b = gen_ncode(nil, val[1], result.q = val[0].q); }
+     | paren pid ')' { result = val[2]; }
+     ;
+
+    nid : ID { result.b = gen_scode(val[1], result.q = val[0].q); }
+        | HID '/' NUM  { result.b = gen_mcode(val[1], nil, val[3], result.q = val[0].q); }
+        | HID NETMASK HID { result.b = gen_mcode(val[1], val[3], 0, result.q = val[0].q); }
+        | HID {
+            # Decide how to parse HID based on proto
+            result.q = val[0].q;
+            if result.q.addr == Q_PORT then
+              bpf_error("'port' modifier applied to ip host");
+            elsif result.q.addr == Q_PORTRANGE then
+              bpf_error("'portrange' modifier applied to ip host");
+            elsif result.q.addr == Q_PROTO then
+              bpf_error("'proto' modifier applied to ip host");
+            elsif result.q.addr == Q_PROTOCHAIN then
+              bpf_error("'protochain' modifier applied to ip host");
+            end
+            result.b = gen_ncode(val[1], 0, result.q);
+          }
+        | HID6 '/' NUM { result.b = gen_mcode6(val[1], nil, val[3], result.q = val[0].q); }
+        | HID6 { result.b = gen_mcode6(val[1], 0, 128, result.q = val[0].q); }
+        | EID {
+            result.b = gen_ecode(val[1], result.q = val[0].q);
+            # val[1] was allocated by "pcap_ether_aton()",
+            # so we must free it now that we're done
+            # with it.
+            free(val[1]);
+          }
+        | AID {
+            result.b = gen_acode(val[1], result.q = val[0].q);
+            # val[1] was allocated by "pcap_ether_aton()",
+            # so we must free it now that we're done
+            # with it.
+            free(val[1]);
+          }
+        | not id  { gen_not(val[2].b); result = val[2]; }
+        ;
+
+    not : '!' { result = val[0]; }
+        ;
+
+    paren : '(' { result = val[0]; }
+          ;
+
+    pid :   nid
+        | qid and id { gen_and(val[1].b, val[3].b); result = val[3]; }
+        | qid or  id { gen_or(val[1].b, val[3].b); result = val[3];  }
+        ;
+
+    qid : pnum { result.b = gen_ncode(nil, val[1], result.q = val[0].q); }
+        | pid
+        ;
+
+    term : rterm
+         | not term { gen_not(val[2].b); result = val[2]; }
+         ;
+
+    head : pqual dqual aqual { QSET(result.q, val[1], val[2], val[3]); }
+         | pqual dqual       { QSET(result.q, val[1], val[2], Q_DEFAULT); }
+         | pqual aqual       { QSET(result.q, val[1], Q_DEFAULT, val[2]); }
+         | pqual PROTO       { QSET(result.q, val[1], Q_DEFAULT, Q_PROTO); }
+         | pqual PROTOCHAIN  { QSET(result.q, val[1], Q_DEFAULT, Q_PROTOCHAIN); }
+         | pqual ndaqual     { QSET(result.q, val[1], Q_DEFAULT, val[2]); }
+         ;
+
+    rterm : head id             { result = val[2]; }
+          | paren expr ')'      { result.b = val[2].b; result.q = val[1].q; }
+          | pname               { result.b = gen_proto_abbrev(val[1]); result.q = QERR; }
+          | arth relop arth     {
+              result.b = gen_relation(val[2], val[1], val[3], 0); result.q = QERR;
+            }
+          | arth irelop arth    {
+              result.b = gen_relation(val[2], val[1], val[3], 1); result.q = QERR;
+            }
+          | other               { result.b = val[1]; result.q = QERR; }
+          | atmtype             { result.b = gen_atmtype_abbrev(val[1]); result.q = QERR; }
+          | atmmultitype        {
+              result.b = gen_atmmulti_abbrev(val[1]); result.q = QERR;
+            }
+          | atmfield atmvalue   { result.b = val[2].b; result.q = QERR; }
+          | mtp2type            {
+              result.b = gen_mtp2type_abbrev(val[1]); result.q = QERR;
+            }
+          | mtp3field mtp3value { result.b = val[2].b; result.q = QERR; }
+          ;
+
+    # protocol level qualifiers
+    pqual : pname
+          | { result = Q_DEFAULT; }
+          ;
+
+    # 'direction' qualifiers
+    dqual : SRC         { result = Q_SRC;   }
+          | DST         { result = Q_DST;   }
+          | SRC OR DST  { result = Q_OR;    }
+          | DST OR SRC  { result = Q_OR;    }
+          | SRC AND DST { result = Q_AND;   }
+          | DST AND SRC { result = Q_AND;   }
+          | ADDR1       { result = Q_ADDR1; }
+          | ADDR2       { result = Q_ADDR2; }
+          | ADDR3       { result = Q_ADDR3; }
+          | ADDR4       { result = Q_ADDR4; }
+          | RA          { result = Q_RA;    }
+          | TA          { result = Q_TA;    }
+          ;
+
+    # address type qualifiers
+    aqual : HOST      { result = Q_HOST; }
+          | NET       { result = Q_NET; }
+          | PORT      { result = Q_PORT; }
+          | PORTRANGE { result = Q_PORTRANGE; }
+          ;
+
+    # non-directional address type qualifiers
+    ndaqual : GATEWAY { result = Q_GATEWAY; }
+            ;
+
+    pname : LINK    { result = Q_LINK;      }
+          | IP      { result = Q_IP;        }
+          | ARP     { result = Q_ARP;       }
+          | RARP    { result = Q_RARP;      }
+          | SCTP    { result = Q_SCTP;      }
+          | TCP     { result = Q_TCP;       }
+          | UDP     { result = Q_UDP;       }
+          | ICMP    { result = Q_ICMP;      }
+          | IGMP    { result = Q_IGMP;      }
+          | IGRP    { result = Q_IGRP;      }
+          | PIM     { result = Q_PIM;       }
+          | VRRP    { result = Q_VRRP;      }
+          | CARP    { result = Q_CARP;      }
+          | ATALK   { result = Q_ATALK;     }
+          | AARP    { result = Q_AARP;      }
+          | DECNET  { result = Q_DECNET;    }
+          | LAT     { result = Q_LAT;       }
+          | SCA     { result = Q_SCA;       }
+          | MOPDL   { result = Q_MOPDL;     }
+          | MOPRC   { result = Q_MOPRC;     }
+          | IPV6    { result = Q_IPV6;      }
+          | ICMPV6  { result = Q_ICMPV6;    }
+          | AH      { result = Q_AH;        }
+          | ESP     { result = Q_ESP;       }
+          | ISO     { result = Q_ISO;       }
+          | ESIS    { result = Q_ESIS;      }
+          | ISIS    { result = Q_ISIS;      }
+          | L1      { result = Q_ISIS_L1;   }
+          | L2      { result = Q_ISIS_L2;   }
+          | IIH     { result = Q_ISIS_IIH;  }
+          | LSP     { result = Q_ISIS_LSP;  }
+          | SNP     { result = Q_ISIS_SNP;  }
+          | PSNP    { result = Q_ISIS_PSNP; }
+          | CSNP    { result = Q_ISIS_CSNP; }
+          | CLNP    { result = Q_CLNP;      }
+          | STP     { result = Q_STP;       }
+          | IPX     { result = Q_IPX;       }
+          | NETBEUI { result = Q_NETBEUI;   }
+          | RADIO   { result = Q_RADIO;     }
+          ;
+
+    other : pqual TK_BROADCAST   { result = gen_broadcast(val[1]); }
+          | pqual TK_MULTICAST   { result = gen_multicast(val[1]); }
+          | LESS NUM             { result = gen_less(val[2]); }
+          | GREATER NUM          { result = gen_greater(val[2]); }
+          | CBYTE NUM byteop NUM { result = gen_byteop(val[3], val[2], val[4]); }
+          | INBOUND              { result = gen_inbound(0); }
+          | OUTBOUND             { result = gen_inbound(1); }
+          | VLAN pnum            { result = gen_vlan(val[2]); }
+          | VLAN                 { result = gen_vlan(-1); }
+          | MPLS pnum            { result = gen_mpls(val[2]); }
+          | MPLS                 { result = gen_mpls(-1); }
+          | PPPOED               { result = gen_pppoed(); }
+          | PPPOES               { result = gen_pppoes(); }
+          | pfvar                { result = val[1]; }
+          | pqual p80211         { result = val[2]; }
+          ;
+
+    pfvar: PF_IFNAME ID     { result = gen_pf_ifname(val[2]); }
+         | PF_RSET ID       { result = gen_pf_ruleset(val[2]); }
+         | PF_RNR NUM       { result = gen_pf_rnr(val[2]); }
+         | PF_SRNR NUM      { result = gen_pf_srnr(val[2]); }
+         | PF_REASON reason { result = gen_pf_reason(val[2]); }
+         | PF_ACTION action { result = gen_pf_action(val[2]); }
+         ;
+
+    p80211 : TYPE type SUBTYPE subtype {
+               result = gen_p80211_type(val[2] | val[4],
+                   IEEE80211_FC0_TYPE_MASK | IEEE80211_FC0_SUBTYPE_MASK);
+             }
+           | TYPE type  { result = gen_p80211_type(val[2], IEEE80211_FC0_TYPE_MASK); }
+           | SUBTYPE type_subtype {
+               result = gen_p80211_type(val[2],
+                   IEEE80211_FC0_TYPE_MASK | IEEE80211_FC0_SUBTYPE_MASK);
+             }
+           | DIR dir  { result = gen_p80211_fcdir(val[2]); }
+           ;
+
+    type :   NUM
+         | ID {
+             result = str2tok(val[1], ieee80211_types);
+             if result == -1 then
+               bpf_error("unknown 802.11 type name");
+             end
+             }
+         ;
+
+    subtype : NUM
+            | ID {
+                0.upto ieee80211_type_subtypes.length do |i|
+                  if ieee80211_type_subtypes[i].tok == nil then
+                    # Ran out of types
+                    bpf_error("unknown 802.11 type");
+                    break;
+                  end
+                  if val[i]-1 == ieee80211_type_subtypes[i].type then
+                    types = ieee80211_type_subtypes[i].tok;
+                    break;
+                  end
+                end
+
+                result = str2tok(val[1], types);
+                if result == -1 then
+                  bpf_error("unknown 802.11 subtype name");
+                end
+              }
+            ;
+
+    type_subtype : ID {
+                     0.upto ieee80211_type_subtypes.length do |i|
+                       if ieee80211_type_subtypes[i].tok == nil then
+                         # Ran out of types
+                         bpf_error("unknown 802.11 type name");
+                         break;
+                       end
+                       result = str2tok(val[1], ieee80211_type_subtypes[i].tok);
+                       if result != -1 then
+                         result |= ieee80211_type_subtypes[i].type;
+                         break;
+                       end
+                     end
+                   }
+                 ;
+
+    dir : NUM
+        | ID {
+            if pcap_strcasecmp(val[1], "nods") == 0 then
+              result = IEEE80211_FC1_DIR_NODS;
+            elsif pcap_strcasecmp(val[1], "tods") == 0 then
+              result = IEEE80211_FC1_DIR_TODS;
+            elsif pcap_strcasecmp(val[1], "fromds") == 0 then
+              result = IEEE80211_FC1_DIR_FROMDS;
+            elsif pcap_strcasecmp(val[1], "dstods") == 0 then
+              result = IEEE80211_FC1_DIR_DSTODS;
+            else
+              bpf_error("unknown 802.11 direction");
+            end
+          }
+        ;
+
+    reason : NUM { result = val[1]; }
+           | ID  { result = pfreason_to_num(val[1]); }
+           ;
+
+    action : ID { result = pfaction_to_num(val[1]); }
+           ;
+
+    relop : '>' { result = BPF_JGT; }
+          | GEQ { result = BPF_JGE; }
+          | '=' { result = BPF_JEQ; }
+          ;
+
+    irelop : LEQ { result = BPF_JGT; }
+           | '<' { result = BPF_JGE; }
+           | NEQ { result = BPF_JEQ; }
+           ;
+
+    arth : pnum { result = gen_loadi(val[1]); }
+         | narth
+         ;
+
+    narth : pname '[' arth ']'         { result = gen_load(val[1], val[3], 1);       }
+          | pname '[' arth ':' NUM ']' { result = gen_load(val[1], val[3], val[5]);      }
+          | arth '+' arth              { result = gen_arth(BPF_ADD, val[1], val[3]); }
+          | arth '-' arth              { result = gen_arth(BPF_SUB, val[1], val[3]); }
+          | arth '*' arth              { result = gen_arth(BPF_MUL, val[1], val[3]); }
+          | arth '/' arth              { result = gen_arth(BPF_DIV, val[1], val[3]); }
+          | arth '&' arth              { result = gen_arth(BPF_AND, val[1], val[3]); }
+          | arth '|' arth              { result = gen_arth(BPF_OR, val[1], val[3]);  }
+          | arth LSH arth              { result = gen_arth(BPF_LSH, val[1], val[3]); }
+          | arth RSH arth              { result = gen_arth(BPF_RSH, val[1], val[3]); }
+          | '-' arth =UMINUS           { result = gen_neg(val[2]);               }
+          | paren narth ')'            { result = val[2];                        }
+          | LEN                        { result = gen_loadlen();             }
+          ;
+
+    byteop : '&' { result = '&'; }
+           | '|' { result = '|'; }
+           | '<' { result = '<'; }
+           | '>' { result = '>'; }
+           | '=' { result = '='; }
+           ;
+
+    pnum : NUM
+         | paren pnum ')' { result = val[2]; }
+         ;
+
+    atmtype : LANE    { result = A_LANE;    }
+            | LLC     { result = A_LLC;     }
+            | METAC   { result = A_METAC;   }
+            | BCC     { result = A_BCC;     }
+            | OAMF4EC { result = A_OAMF4EC; }
+            | OAMF4SC { result = A_OAMF4SC; }
+            | SC      { result = A_SC;      }
+            | ILMIC   { result = A_ILMIC;   }
+            ;
+
+    atmmultitype : OAM         { result = A_OAM;         }
+                 | OAMF4       { result = A_OAMF4;       }
+                 | CONNECTMSG  { result = A_CONNECTMSG;  }
+                 | METACONNECT { result = A_METACONNECT; }
+                 ;
+
+    # ATM field types quantifier
+    atmfield : VPI { result.atmfieldtype = A_VPI; }
+             | VCI { result.atmfieldtype = A_VCI; }
+             ;
+
+    atmvalue : atmfieldvalue
+             | relop NUM  {
+                 result.b = gen_atmfield_code(val[0].atmfieldtype, val[2], val[1], 0);
+               }
+             | irelop NUM {
+                 result.b = gen_atmfield_code(val[0].atmfieldtype, val[2], val[1], 1);
+               }
+             | paren atmlistvalue ')' { result.b = val[2].b; result.q = QERR; }
+             ;
+
+    atmfieldvalue : NUM {
+                      result.atmfieldtype = val[0].atmfieldtype;
+                      if result.atmfieldtype == A_VPI || result.atmfieldtype == A_VCI then
+                        result.b = gen_atmfield_code(result.atmfieldtype, val[1], BPF_JEQ, 0);
+                      end
+                      }
+                  ;
+
+    atmlistvalue : atmfieldvalue
+                 | atmlistvalue or atmfieldvalue {
+                     gen_or(val[1].b, val[3].b); result = val[3];
+                   }
+                 ;
+
+    # MTP2 types quantifier
+    mtp2type : FISU  { result = M_FISU;  }
+             | LSSU  { result = M_LSSU;  }
+             | MSU   { result = M_MSU;   }
+             | HFISU { result = MH_FISU; }
+             | HLSSU { result = MH_LSSU; }
+             | HMSU  { result = MH_MSU;  }
+             ;
+
+    # MTP3 field types quantifier
+    mtp3field : SIO  { result.mtp3fieldtype = M_SIO;  }
+              | OPC  { result.mtp3fieldtype = M_OPC;  }
+              | DPC  { result.mtp3fieldtype = M_DPC;  }
+              | SLS  { result.mtp3fieldtype = M_SLS;  }
+              | HSIO { result.mtp3fieldtype = MH_SIO; }
+              | HOPC { result.mtp3fieldtype = MH_OPC; }
+              | HDPC { result.mtp3fieldtype = MH_DPC; }
+              | HSLS { result.mtp3fieldtype = MH_SLS; }
+              ;
+
+    mtp3value: mtp3fieldvalue
+             | relop NUM  {
+                 result.b = gen_mtp3field_code(val[0].mtp3fieldtype, val[2], val[1], 0);
+               }
+             | irelop NUM {
+                 result.b = gen_mtp3field_code(val[0].mtp3fieldtype, val[2], val[1], 1);
+               }
+             | paren mtp3listvalue ')' { result.b = val[2].b; result.q = QERR; }
+             ;
+
+    mtp3fieldvalue : NUM {
+                       result.mtp3fieldtype = val[0].mtp3fieldtype;
+                       if result.mtp3fieldtype == M_SIO ||
+                          result.mtp3fieldtype == M_OPC ||
+                          result.mtp3fieldtype == M_DPC ||
+                          result.mtp3fieldtype == M_SLS ||
+                          result.mtp3fieldtype == MH_SIO ||
+                          result.mtp3fieldtype == MH_OPC ||
+                          result.mtp3fieldtype == MH_DPC ||
+                          result.mtp3fieldtype == MH_SLS then
+                         result.b = gen_mtp3field_code(result.mtp3fieldtype, val[1], BPF_JEQ, 0);
+                       end
+                     }
+                   ;
+
+    mtp3listvalue : mtp3fieldvalue
+                  | mtp3listvalue or mtp3fieldvalue {
+                      gen_or(val[1].b, val[3].b);
+                      result = val[3];
+                  }
+                  ;
+
+end
+
+---- inner
+
+    QERR = [nil, nil, nil, nil]
+
+    def next_token # :nodoc:
+    end
+
+    ##
+    # Parser +source+ and returns a parsed filter
+
+    def parse source
+      @source = source
+
+      do_parse
+    end
+
+# :stopdoc:
+
+---- header
+class Capp
+
+  ##
+  # A Berkeley Packet Filter parser.
+
+---- footer
+end
+
+require 'capp/bpf/scanner.rex'
+
