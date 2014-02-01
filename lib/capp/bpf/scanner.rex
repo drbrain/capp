@@ -28,10 +28,10 @@ option
   lineno
 
 macro
-  N      /[0-9]+|(0X|0x)[0-9A-Fa-f]+/
-  B      /[0-9A-Fa-f][0-9A-Fa-f]?/
-  B2     /[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]/
-  W      /[0-9A-Fa-f][0-9A-Fa-f]?[0-9A-Fa-f]?[0-9A-Fa-f]?/
+  N      /[0-9]+|(0X|0x)[\h]+/
+  B      /[\h][\h]?/
+  B2     /[\h][\h][\h][\h]/
+  W      /[\h][\h]?[\h]?[\h]?/
 
   V680   /#{W}:#{W}:#{W}:#{W}:#{W}:#{W}:#{W}:#{W}/
 
@@ -193,8 +193,8 @@ rule
   /broadcast/            { [:keyword, 'TK_BROADCAST'] }
   /multicast/            { [:keyword, 'TK_MULTICAST'] }
 
-  /and|"&&"/             { [:keyword, 'AND'] }
-  /or|"||"/              { [:keyword, 'OR'] }
+  /and|&&/               { [:keyword, 'AND'] }
+  /or|\|\|/              { [:keyword, 'OR'] }
   /not/                  { [:keyword, 'NOT'] }
 
   /len|length/           { [:keyword, 'LEN'] }
@@ -252,11 +252,8 @@ rule
   /==/                   { [:keyword, '='] }
   /<</                   { [:keyword, 'LSH'] }
   />>/                   { [:keyword, 'RSH'] }
-  /#{B}/                 { [:AID, text]; } # { yyval.e = pcap_ether_aton(yytext+1); }
   /#{MAC}/               { [:EID, text]; } # { yyval.e = pcap_ether_aton(yytext); }
-  /#{N}/                 { [:NUM, text.to_i] }
-  /(#{N}\.#{N})|(#{N}\.#{N}\.#{N})|(#{N}\.#{N}\.#{N}\.#{N})/ { [:HID, text] }
-  /#{V6}/                { [:HID6, text] }
+  /#{N}(\.#{N}){1,3}/    { [:HID, text] }
 #                           struct addrinfo hints, *res;
 #                           memset(&hints, 0, sizeof(hints));
 #                           hints.ai_family = AF_INET6;
@@ -267,34 +264,37 @@ rule
 #                                 freeaddrinfo(res);
 #                                 yylval.s = sdup((char *)yytext); return HID6;
 #                           }
-  /#{B}:+({#B}:+)+/      { raise "bogus ethernet address #{text}" }
-  /icmptype/             { [:NUM,    0] } # { yylval.i = 0; return NUM; }
-  /icmpcode/             { [:NUM,    1] } # { yylval.i = 1; return NUM; }
-  /icmp-echoreply/       { [:NUM,    0] } # { yylval.i = 0; return NUM; }
-  /icmp-unreach/         { [:NUM,    3] } # { yylval.i = 3; return NUM; }
-  /icmp-sourcequench/    { [:NUM,    4] } # { yylval.i = 4; return NUM; }
-  /icmp-redirect/        { [:NUM,    5] } # { yylval.i = 5; return NUM; }
-  /icmp-echo/            { [:NUM,    8] } # { yylval.i = 8; return NUM; }
-  /icmp-routeradvert/    { [:NUM,    9] } # { yylval.i = 9; return NUM; }
-  /icmp-routersolicit/   { [:NUM,   10] } # { yylval.i = 10; return NUM; }
-  /icmp-timxceed/        { [:NUM,   11] } # { yylval.i = 11; return NUM; }
-  /icmp-paramprob/       { [:NUM,   12] } # { yylval.i = 12; return NUM; }
-  /icmp-tstamp/          { [:NUM,   13] } # { yylval.i = 13; return NUM; }
-  /icmp-tstampreply/     { [:NUM,   14] } # { yylval.i = 14; return NUM; }
-  /icmp-ireq/            { [:NUM,   15] } # { yylval.i = 15; return NUM; }
-  /icmp-ireqreply/       { [:NUM,   16] } # { yylval.i = 16; return NUM; }
-  /icmp-maskreq/         { [:NUM,   17] } # { yylval.i = 17; return NUM; }
-  /icmp-maskreply/       { [:NUM,   18] } # { yylval.i = 18; return NUM; }
-  /tcpflags/             { [:NUM,   13] } # { yylval.i = 13; return NUM; }
-  /tcp-fin/              { [:NUM, 0x01] } # { yylval.i = 0x01; return NUM; }
-  /tcp-syn/              { [:NUM, 0x02] } # { yylval.i = 0x02; return NUM; }
-  /tcp-rst/              { [:NUM, 0x04] } # { yylval.i = 0x04; return NUM; }
-  /tcp-push/             { [:NUM, 0x08] } # { yylval.i = 0x08; return NUM; }
-  /tcp-ack/              { [:NUM, 0x10] } # { yylval.i = 0x10; return NUM; }
-  /tcp-urg/              { [:NUM, 0x20] } # { yylval.i = 0x20; return NUM; }
-  /[A-Za-z0-9]([-_.A-Za-z0-9]*[.A-Za-z0-9])?/ { [:ID, text] }
-  /"\\"[^ !()\n\t]+/     { [:ID, text] } # { yylval.s = sdup(yytext + 1); return ID; }
-  /[^ \[\]\t\n\-_.A-Za-z0-9!<>()&|=]+/ { raise "illegal token: #{text}" }
+  /#{V6}(?![:.\h])/      { [:HID6, text] }
+  /#{B}:+(#{B}:+)+/      { raise "bogus ethernet address #{text}" }
+  /#{B}/                 { [:AID, text]; } # { yyval.e = pcap_ether_aton(yytext+1); }
+  /#{N}/                 { [:NUM, text.to_i] }
+  /icmptype/             { [:NUM,    0] } # { yylval.i = 0; return :NUM; }
+  /icmpcode/             { [:NUM,    1] } # { yylval.i = 1; return :NUM; }
+  /icmp-echoreply/       { [:NUM,    0] } # { yylval.i = 0; return :NUM; }
+  /icmp-unreach/         { [:NUM,    3] } # { yylval.i = 3; return :NUM; }
+  /icmp-sourcequench/    { [:NUM,    4] } # { yylval.i = 4; return :NUM; }
+  /icmp-redirect/        { [:NUM,    5] } # { yylval.i = 5; return :NUM; }
+  /icmp-echo/            { [:NUM,    8] } # { yylval.i = 8; return :NUM; }
+  /icmp-routeradvert/    { [:NUM,    9] } # { yylval.i = 9; return :NUM; }
+  /icmp-routersolicit/   { [:NUM,   10] } # { yylval.i = 10; return :NUM; }
+  /icmp-timxceed/        { [:NUM,   11] } # { yylval.i = 11; return :NUM; }
+  /icmp-paramprob/       { [:NUM,   12] } # { yylval.i = 12; return :NUM; }
+  /icmp-tstamp/          { [:NUM,   13] } # { yylval.i = 13; return :NUM; }
+  /icmp-tstampreply/     { [:NUM,   14] } # { yylval.i = 14; return :NUM; }
+  /icmp-ireq/            { [:NUM,   15] } # { yylval.i = 15; return :NUM; }
+  /icmp-ireqreply/       { [:NUM,   16] } # { yylval.i = 16; return :NUM; }
+  /icmp-maskreq/         { [:NUM,   17] } # { yylval.i = 17; return :NUM; }
+  /icmp-maskreply/       { [:NUM,   18] } # { yylval.i = 18; return :NUM; }
+  /tcpflags/             { [:NUM,   13] } # { yylval.i = 13; return :NUM; }
+  /tcp-fin/              { [:NUM, 0x01] } # { yylval.i = 0x01; return :NUM; }
+  /tcp-syn/              { [:NUM, 0x02] } # { yylval.i = 0x02; return :NUM; }
+  /tcp-rst/              { [:NUM, 0x04] } # { yylval.i = 0x04; return :NUM; }
+  /tcp-push/             { [:NUM, 0x08] } # { yylval.i = 0x08; return :NUM; }
+  /tcp-ack/              { [:NUM, 0x10] } # { yylval.i = 0x10; return :NUM; }
+  /tcp-urg/              { [:NUM, 0x20] } # { yylval.i = 0x20; return :NUM; }
+  /[a-z\d]([\w.-]*[a-z\d.])?/i { [:ID, text] }
+  /\\[^ !()\n\t]+/       { [:ID, text[1..-1]] } # { yylval.s = sdup(yytext + 1); return ID; }
+  /[^ \[\]\t\n_.\h!<>()&|=-]+/ { raise "illegal token: #{text}" }
   /./                    { raise "illegal char '#{text}'" }
 
 end
