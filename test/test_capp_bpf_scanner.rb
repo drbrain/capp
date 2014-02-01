@@ -19,7 +19,7 @@ class TestCappBPFScanner < Capp::TestCase
   end
 
   def test_next_token_identifier
-    assert_equal [:ID, 'foo'], scanner("foo").next_token
+    assert_equal [:ID, 'identifier'], scanner('identifier').next_token
   end
 
   def test_next_token_mac_bad

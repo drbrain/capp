@@ -20,7 +20,7 @@
 ##
 # Scanner for the Berkeley Packet Filter
 
-class Capp::BPF::Scanner
+class Capp::BPF::Scanner < Capp::BPF
 
 option
 
@@ -114,144 +114,145 @@ macro
 
 rule
 
-  /dst/                  { [:keyword, 'DST'] }
-  /src/                  { [:keyword, 'SRC'] }
+  /dst/                  { :DST }
+  /src/                  { :SRC }
 
-  /link|ether|ppp|slip/  { [:keyword, 'LINK'] }
-  /fddi|tr|wlan/         { [:keyword, 'LINK'] }
-  /arp/                  { [:keyword, 'ARP'] }
-  /rarp/                 { [:keyword, 'RARP'] }
-  /ip/                   { [:keyword, 'IP'] }
-  /sctp/                 { [:keyword, 'SCTP'] }
-  /tcp/                  { [:keyword, 'TCP'] }
-  /udp/                  { [:keyword, 'UDP'] }
-  /icmp/                 { [:keyword, 'ICMP'] }
-  /igmp/                 { [:keyword, 'IGMP'] }
-  /igrp/                 { [:keyword, 'IGRP'] }
-  /pim/                  { [:keyword, 'PIM'] }
-  /vrrp/                 { [:keyword, 'VRRP'] }
-  /carp/                 { [:keyword, 'CARP'] }
-  /radio/                { [:keyword, 'RADIO'] }
+  /link|ether|ppp|slip/  { :LINK  }
+  /fddi|tr|wlan/         { :LINK  }
+  /arp/                  { :ARP   }
+  /rarp/                 { :RARP  }
+  /ip/                   { :IP    }
+  /sctp/                 { :SCTP  }
+  /tcp/                  { :TCP   }
+  /udp/                  { :UDP   }
+  /icmp/                 { :ICMP  }
+  /igmp/                 { :IGMP  }
+  /igrp/                 { :IGRP  }
+  /pim/                  { :PIM   }
+  /vrrp/                 { :VRRP  }
+  /carp/                 { :CARP  }
+  /radio/                { :RADIO }
 
-  /ip6/                  { [:keyword, 'IPV6'] }
-  /icmp6/                { [:keyword, 'ICMPV6'] }
-  /ah/                   { [:keyword, 'AH'] }
-  /esp/                  { [:keyword, 'ESP'] }
+  /ip6/                  { :IPV6   }
+  /icmp6/                { :ICMPV6 }
+  /ah/                   { :AH     }
+  /esp/                  { :ESP    }
 
-  /atalk/                { [:keyword, 'ATALK'] }
-  /aarp/                 { [:keyword, 'AARP'] }
-  /decnet/               { [:keyword, 'DECNET'] }
-  /lat/                  { [:keyword, 'LAT'] }
-  /sca/                  { [:keyword, 'SCA'] }
-  /moprc/                { [:keyword, 'MOPRC'] }
-  /mopdl/                { [:keyword, 'MOPDL'] }
+  /atalk/                { :ATALK  }
+  /aarp/                 { :AARP   }
+  /decnet/               { :DECNET }
+  /lat/                  { :LAT    }
+  /sca/                  { :SCA    }
+  /moprc/                { :MOPRC  }
+  /mopdl/                { :MOPDL  }
 
-  /iso/                  { [:keyword, 'ISO'] }
-  /esis/                 { [:keyword, 'ESIS'] }
-  /es-is/                { [:keyword, 'ESIS'] }
-  /isis/                 { [:keyword, 'ISIS'] }
-  /is-is/                { [:keyword, 'ISIS'] }
-  /l1/                   { [:keyword, 'L1'] }
-  /l2/                   { [:keyword, 'L2'] }
-  /iih/                  { [:keyword, 'IIH'] }
-  /lsp/                  { [:keyword, 'LSP'] }
-  /snp/                  { [:keyword, 'SNP'] }
-  /csnp/                 { [:keyword, 'CSNP'] }
-  /psnp/                 { [:keyword, 'PSNP'] }
+  /iso/                  { :ISO  }
+  /esis/                 { :ESIS }
+  /es-is/                { :ESIS }
+  /isis/                 { :ISIS }
+  /is-is/                { :ISIS }
+  /l1/                   { :L1   }
+  /l2/                   { :L2   }
+  /iih/                  { :IIH  }
+  /lsp/                  { :LSP  }
+  /snp/                  { :SNP  }
+  /csnp/                 { :CSNP }
+  /psnp/                 { :PSNP }
 
-  /clnp/                 { [:keyword, 'CLNP'] }
+  /clnp/                 { :CLNP }
 
-  /stp/                  { [:keyword, 'STP'] }
+  /stp/                  { :STP }
 
-  /ipx/                  { [:keyword, 'IPX'] }
+  /ipx/                  { :IPX }
 
-  /netbeui/              { [:keyword, 'NETBEUI'] }
+  /netbeui/              { :NETBEUI }
 
-  /host/                 { [:keyword, 'HOST'] }
-  /net/                  { [:keyword, 'NET'] }
-  /mask/                 { [:keyword, 'NETMASK'] }
-  /port/                 { [:keyword, 'PORT'] }
-  /portrange/            { [:keyword, 'PORTRANGE'] }
-  /proto/                { [:keyword, 'PROTO'] }
-  /protochain/           { [:keyword, 'PROTOCHAIN'] }
+  /host/                 { :HOST       }
+  /net/                  { :NET        }
+  /mask/                 { :NETMASK    }
+  /port/                 { :PORT       }
+  /portrange/            { :PORTRANGE  }
+  /proto/                { :PROTO      }
+  /protochain/           { :PROTOCHAIN }
 
-  /gateway/              { [:keyword, 'GATEWAY'] }
+  /gateway/              { :GATEWAY }
 
-  /type/                 { [:keyword, 'TYPE'] }
-  /subtype/              { [:keyword, 'SUBTYPE'] }
-  /direction|dir/        { [:keyword, 'DIR'] }
-  /address1|addr1/       { [:keyword, 'ADDR1'] }
-  /address2|addr2/       { [:keyword, 'ADDR2'] }
-  /address3|addr3/       { [:keyword, 'ADDR3'] }
-  /address4|addr4/       { [:keyword, 'ADDR4'] }
-  /ra/                   { [:keyword, 'RA'] }
-  /ta/                   { [:keyword, 'TA'] }
+  /type/                 { :TYPE    }
+  /subtype/              { :SUBTYPE }
+  /direction|dir/        { :DIR     }
+  /address1|addr1/       { :ADDR1   }
+  /address2|addr2/       { :ADDR2   }
+  /address3|addr3/       { :ADDR3   }
+  /address4|addr4/       { :ADDR4   }
+  /ra/                   { :RA      }
+  /ta/                   { :TA      }
 
-  /less/                 { [:keyword, 'LESS'] }
-  /greater/              { [:keyword, 'GREATER'] }
-  /byte/                 { [:keyword, 'CBYTE'] }
-  /broadcast/            { [:keyword, 'TK_BROADCAST'] }
-  /multicast/            { [:keyword, 'TK_MULTICAST'] }
+  /less/                 { :LESS         }
+  /greater/              { :GREATER      }
+  /byte/                 { :CBYTE        }
+  /broadcast/            { :TK_BROADCAST }
+  /multicast/            { :TK_MULTICAST }
 
-  /and|&&/               { [:keyword, 'AND'] }
-  /or|\|\|/              { [:keyword, 'OR'] }
-  /not/                  { [:keyword, 'NOT'] }
+  /and|&&/               { :AND }
+  /or|\|\|/              { :OR }
+  /not/                  { :NOT }
 
-  /len|length/           { [:keyword, 'LEN'] }
-  /inbound/              { [:keyword, 'INBOUND'] }
-  /outbound/             { [:keyword, 'OUTBOUND'] }
+  /len|length/           { :LEN      }
+  /inbound/              { :INBOUND  }
+  /outbound/             { :OUTBOUND }
 
-  /vlan/                 { [:keyword, 'VLAN'] }
-  /mpls/                 { [:keyword, 'MPLS'] }
-  /pppoed/               { [:keyword, 'PPPOED'] }
-  /pppoes/               { [:keyword, 'PPPOES'] }
+  /vlan/                 { :VLAN        }
+  /mpls/                 { :MPLS        }
+  /pppoed/               { :PPPOED      }
+  /pppoes/               { :PPPOES      }
 
-  /lane/                 { [:keyword, 'LANE'] }
-  /llc/                  { [:keyword, 'LLC'] }
-  /metac/                { [:keyword, 'METAC'] }
-  /bcc/                  { [:keyword, 'BCC'] }
-  /oam/                  { [:keyword, 'OAM'] }
-  /oamf4/                { [:keyword, 'OAMF4'] }
-  /oamf4ec/              { [:keyword, 'OAMF4EC'] }
-  /oamf4sc/              { [:keyword, 'OAMF4SC'] }
-  /sc/                   { [:keyword, 'SC'] }
-  /ilmic/                { [:keyword, 'ILMIC'] }
-  /vpi/                  { [:keyword, 'VPI'] }
-  /vci/                  { [:keyword, 'VCI'] }
-  /connectmsg/           { [:keyword, 'CONNECTMSG'] }
-  /metaconnect/          { [:keyword, 'METACONNECT'] }
+  /lane/                 { :LANE        }
+  /llc/                  { :LLC         }
+  /metac/                { :METAC       }
+  /bcc/                  { :BCC         }
+  /oam/                  { :OAM         }
+  /oamf4/                { :OAMF4       }
+  /oamf4ec/              { :OAMF4EC     }
+  /oamf4sc/              { :OAMF4SC     }
+  /sc/                   { :SC          }
+  /ilmic/                { :ILMIC       }
+  /vpi/                  { :VPI         }
+  /vci/                  { :VCI         }
+  /connectmsg/           { :CONNECTMSG  }
+  /metaconnect/          { :METACONNECT }
 
-  /on|ifname/            { [:keyword, 'PF_IFNAME'] }
-  /rset|ruleset/         { [:keyword, 'PF_RSET'] }
-  /rnr|rulenum/          { [:keyword, 'PF_RNR'] }
-  /srnr|subrulenum/      { [:keyword, 'PF_SRNR'] }
-  /reason/               { [:keyword, 'PF_REASON'] }
-  /action/               { [:keyword, 'PF_ACTION'] }
+  /on|ifname/            { :PF_IFNAME }
+  /rset|ruleset/         { :PF_RSET   }
+  /rnr|rulenum/          { :PF_RNR    }
+  /srnr|subrulenum/      { :PF_SRNR   }
+  /reason/               { :PF_REASON }
+  /action/               { :PF_ACTION }
 
-  /fisu/                 { [:keyword, 'FISU'] }
-  /lssu/                 { [:keyword, 'LSSU'] }
-  /lsu/                  { [:keyword, 'LSSU'] }
-  /msu/                  { [:keyword, 'MSU'] }
-  /hfisu/                { [:keyword, 'HFISU'] }
-  /hlssu/                { [:keyword, 'HLSSU'] }
-  /hmsu/                 { [:keyword, 'HMSU'] }
-  /sio/                  { [:keyword, 'SIO'] }
-  /opc/                  { [:keyword, 'OPC'] }
-  /dpc/                  { [:keyword, 'DPC'] }
-  /sls/                  { [:keyword, 'SLS'] }
-  /hsio/                 { [:keyword, 'HSIO'] }
-  /hopc/                 { [:keyword, 'HOPC'] }
-  /hdpc/                 { [:keyword, 'HDPC'] }
-  /hsls/                 { [:keyword, 'HSLS'] }
+  /fisu/                 { :FISU  }
+  /lssu/                 { :LSSU  }
+  /lsu/                  { :LSSU  }
+  /msu/                  { :MSU   }
+  /hfisu/                { :HFISU }
+  /hlssu/                { :HLSSU }
+  /hmsu/                 { :HMSU  }
+  /sio/                  { :SIO   }
+  /opc/                  { :OPC   }
+  /dpc/                  { :DPC   }
+  /sls/                  { :SLS   }
+  /hsio/                 { :HSIO  }
+  /hopc/                 { :HOPC  }
+  /hdpc/                 { :HDPC  }
+  /hsls/                 { :HSLS  }
 
-  /[ \r\n\t]/            { }
+  /[ \r\n\t]/            { nil  }
   /[+*\/:\[\]!<>()&|=-]/ { text }
-  />=/                   { [:keyword, 'GEQ'] }
-  /<=/                   { [:keyword, 'LEQ'] }
-  /!=/                   { [:keyword, 'NEQ'] }
-  /==/                   { [:keyword, '='] }
-  /<</                   { [:keyword, 'LSH'] }
-  />>/                   { [:keyword, 'RSH'] }
+  />=/                   { :GEQ }
+  /<=/                   { :LEQ }
+  /!=/                   { :NEQ }
+  /==/                   { '='  }
+  /<</                   { :LSH }
+  />>/                   { :RSH }
+
   /#{MAC}/               { [:EID, text]; } # { yyval.e = pcap_ether_aton(yytext); }
   /#{N}(\.#{N}){1,3}/    { [:HID, text] }
 #                           struct addrinfo hints, *res;
