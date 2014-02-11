@@ -64,7 +64,7 @@ end
 rule '.rb' => '.ry' do |t|
   racc = Gem.bin_path 'racc', 'racc'
 
-  ruby "-rubygems #{racc} -l -o #{t.name} #{t.source}"
+  ruby "-rubygems #{racc} -t -l -o #{t.name} #{t.source}"
 end
 
 namespace :travis do

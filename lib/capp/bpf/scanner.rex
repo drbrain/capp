@@ -22,11 +22,6 @@
 
 class Capp::BPF::Scanner < Capp::BPF
 
-option
-
-  do_parse
-  lineno
-
 macro
   N      /[0-9]+|(0X|0x)[\h]+/
   B      /[\h][\h]?/
@@ -114,144 +109,144 @@ macro
 
 rule
 
-  /dst/                  { :DST }
-  /src/                  { :SRC }
+  /dst/                  { [:DST, text] }
+  /src/                  { [:SRC, text] }
 
-  /link|ether|ppp|slip/  { :LINK  }
-  /fddi|tr|wlan/         { :LINK  }
-  /arp/                  { :ARP   }
-  /rarp/                 { :RARP  }
-  /ip/                   { :IP    }
-  /sctp/                 { :SCTP  }
-  /tcp/                  { :TCP   }
-  /udp/                  { :UDP   }
-  /icmp/                 { :ICMP  }
-  /igmp/                 { :IGMP  }
-  /igrp/                 { :IGRP  }
-  /pim/                  { :PIM   }
-  /vrrp/                 { :VRRP  }
-  /carp/                 { :CARP  }
-  /radio/                { :RADIO }
+  /link|ether|ppp|slip/  { [:LINK, text]  }
+  /fddi|tr|wlan/         { [:LINK, text]  }
+  /arp/                  { [:ARP, text]   }
+  /rarp/                 { [:RARP, text]  }
+  /ip/                   { [:IP, text]    }
+  /sctp/                 { [:SCTP, text]  }
+  /tcp/                  { [:TCP, text]   }
+  /udp/                  { [:UDP, text]   }
+  /icmp/                 { [:ICMP, text]  }
+  /igmp/                 { [:IGMP, text]  }
+  /igrp/                 { [:IGRP, text]  }
+  /pim/                  { [:PIM, text]   }
+  /vrrp/                 { [:VRRP, text]  }
+  /carp/                 { [:CARP, text]  }
+  /radio/                { [:RADIO, text] }
 
-  /ip6/                  { :IPV6   }
-  /icmp6/                { :ICMPV6 }
-  /ah/                   { :AH     }
-  /esp/                  { :ESP    }
+  /ip6/                  { [:IPV6, text]   }
+  /icmp6/                { [:ICMPV6, text] }
+  /ah/                   { [:AH, text]     }
+  /esp/                  { [:ESP, text]    }
 
-  /atalk/                { :ATALK  }
-  /aarp/                 { :AARP   }
-  /decnet/               { :DECNET }
-  /lat/                  { :LAT    }
-  /sca/                  { :SCA    }
-  /moprc/                { :MOPRC  }
-  /mopdl/                { :MOPDL  }
+  /atalk/                { [:ATALK, text]  }
+  /aarp/                 { [:AARP, text]   }
+  /decnet/               { [:DECNET, text] }
+  /lat/                  { [:LAT, text]    }
+  /sca/                  { [:SCA, text]    }
+  /moprc/                { [:MOPRC, text]  }
+  /mopdl/                { [:MOPDL, text]  }
 
-  /iso/                  { :ISO  }
-  /esis/                 { :ESIS }
-  /es-is/                { :ESIS }
-  /isis/                 { :ISIS }
-  /is-is/                { :ISIS }
-  /l1/                   { :L1   }
-  /l2/                   { :L2   }
-  /iih/                  { :IIH  }
-  /lsp/                  { :LSP  }
-  /snp/                  { :SNP  }
-  /csnp/                 { :CSNP }
-  /psnp/                 { :PSNP }
+  /iso/                  { [:ISO, text]  }
+  /esis/                 { [:ESIS, text] }
+  /es-is/                { [:ESIS, text] }
+  /isis/                 { [:ISIS, text] }
+  /is-is/                { [:ISIS, text] }
+  /l1/                   { [:L1, text]   }
+  /l2/                   { [:L2, text]   }
+  /iih/                  { [:IIH, text]  }
+  /lsp/                  { [:LSP, text]  }
+  /snp/                  { [:SNP, text]  }
+  /csnp/                 { [:CSNP, text] }
+  /psnp/                 { [:PSNP, text] }
 
-  /clnp/                 { :CLNP }
+  /clnp/                 { [:CLNP, text] }
 
-  /stp/                  { :STP }
+  /stp/                  { [:STP, text] }
 
-  /ipx/                  { :IPX }
+  /ipx/                  { [:IPX, text] }
 
-  /netbeui/              { :NETBEUI }
+  /netbeui/              { [:NETBEUI, text] }
 
-  /host/                 { :HOST       }
-  /net/                  { :NET        }
-  /mask/                 { :NETMASK    }
-  /port/                 { :PORT       }
-  /portrange/            { :PORTRANGE  }
-  /proto/                { :PROTO      }
-  /protochain/           { :PROTOCHAIN }
+  /host/                 { [:HOST, text]       }
+  /net/                  { [:NET, text]        }
+  /mask/                 { [:NETMASK, text]    }
+  /port/                 { [:PORT, text]       }
+  /portrange/            { [:PORTRANGE, text]  }
+  /proto/                { [:PROTO, text]      }
+  /protochain/           { [:PROTOCHAIN, text] }
 
-  /gateway/              { :GATEWAY }
+  /gateway/              { [:GATEWAY, text] }
 
-  /type/                 { :TYPE    }
-  /subtype/              { :SUBTYPE }
-  /direction|dir/        { :DIR     }
-  /address1|addr1/       { :ADDR1   }
-  /address2|addr2/       { :ADDR2   }
-  /address3|addr3/       { :ADDR3   }
-  /address4|addr4/       { :ADDR4   }
-  /ra/                   { :RA      }
-  /ta/                   { :TA      }
+  /type/                 { [:TYPE, text]    }
+  /subtype/              { [:SUBTYPE, text] }
+  /direction|dir/        { [:DIR, text]     }
+  /address1|addr1/       { [:ADDR1, text]   }
+  /address2|addr2/       { [:ADDR2, text]   }
+  /address3|addr3/       { [:ADDR3, text]   }
+  /address4|addr4/       { [:ADDR4, text]   }
+  /ra/                   { [:RA, text]      }
+  /ta/                   { [:TA, text]      }
 
-  /less/                 { :LESS         }
-  /greater/              { :GREATER      }
-  /byte/                 { :CBYTE        }
-  /broadcast/            { :TK_BROADCAST }
-  /multicast/            { :TK_MULTICAST }
+  /less/                 { [:LESS, text]         }
+  /greater/              { [:GREATER, text]      }
+  /byte/                 { [:CBYTE, text]        }
+  /broadcast/            { [:TK_BROADCAST, text] }
+  /multicast/            { [:TK_MULTICAST, text] }
 
-  /and|&&/               { :AND }
-  /or|\|\|/              { :OR }
-  /not/                  { :NOT }
+  /and|&&/               { [:AND, text] }
+  /or|\|\|/              { [:OR, text] }
+  /not/                  { [:NOT, text] }
 
-  /len|length/           { :LEN      }
-  /inbound/              { :INBOUND  }
-  /outbound/             { :OUTBOUND }
+  /len|length/           { [:LEN, text]      }
+  /inbound/              { [:INBOUND, text]  }
+  /outbound/             { [:OUTBOUND, text] }
 
-  /vlan/                 { :VLAN        }
-  /mpls/                 { :MPLS        }
-  /pppoed/               { :PPPOED      }
-  /pppoes/               { :PPPOES      }
+  /vlan/                 { [:VLAN, text]        }
+  /mpls/                 { [:MPLS, text]        }
+  /pppoed/               { [:PPPOED, text]      }
+  /pppoes/               { [:PPPOES, text]      }
 
-  /lane/                 { :LANE        }
-  /llc/                  { :LLC         }
-  /metac/                { :METAC       }
-  /bcc/                  { :BCC         }
-  /oam/                  { :OAM         }
-  /oamf4/                { :OAMF4       }
-  /oamf4ec/              { :OAMF4EC     }
-  /oamf4sc/              { :OAMF4SC     }
-  /sc/                   { :SC          }
-  /ilmic/                { :ILMIC       }
-  /vpi/                  { :VPI         }
-  /vci/                  { :VCI         }
-  /connectmsg/           { :CONNECTMSG  }
-  /metaconnect/          { :METACONNECT }
+  /lane/                 { [:LANE, text]        }
+  /llc/                  { [:LLC, text]         }
+  /metac/                { [:METAC, text]       }
+  /bcc/                  { [:BCC, text]         }
+  /oam/                  { [:OAM, text]         }
+  /oamf4/                { [:OAMF4, text]       }
+  /oamf4ec/              { [:OAMF4EC, text]     }
+  /oamf4sc/              { [:OAMF4SC, text]     }
+  /sc/                   { [:SC, text]          }
+  /ilmic/                { [:ILMIC, text]       }
+  /vpi/                  { [:VPI, text]         }
+  /vci/                  { [:VCI, text]         }
+  /connectmsg/           { [:CONNECTMSG, text]  }
+  /metaconnect/          { [:METACONNECT, text] }
 
-  /on|ifname/            { :PF_IFNAME }
-  /rset|ruleset/         { :PF_RSET   }
-  /rnr|rulenum/          { :PF_RNR    }
-  /srnr|subrulenum/      { :PF_SRNR   }
-  /reason/               { :PF_REASON }
-  /action/               { :PF_ACTION }
+  /on|ifname/            { [:PF_IFNAME, text] }
+  /rset|ruleset/         { [:PF_RSET, text]   }
+  /rnr|rulenum/          { [:PF_RNR, text]    }
+  /srnr|subrulenum/      { [:PF_SRNR, text]   }
+  /reason/               { [:PF_REASON, text] }
+  /action/               { [:PF_ACTION, text] }
 
-  /fisu/                 { :FISU  }
-  /lssu/                 { :LSSU  }
-  /lsu/                  { :LSSU  }
-  /msu/                  { :MSU   }
-  /hfisu/                { :HFISU }
-  /hlssu/                { :HLSSU }
-  /hmsu/                 { :HMSU  }
-  /sio/                  { :SIO   }
-  /opc/                  { :OPC   }
-  /dpc/                  { :DPC   }
-  /sls/                  { :SLS   }
-  /hsio/                 { :HSIO  }
-  /hopc/                 { :HOPC  }
-  /hdpc/                 { :HDPC  }
-  /hsls/                 { :HSLS  }
+  /fisu/                 { [:FISU, text]  }
+  /lssu/                 { [:LSSU, text]  }
+  /lsu/                  { [:LSSU, text]  }
+  /msu/                  { [:MSU, text]   }
+  /hfisu/                { [:HFISU, text] }
+  /hlssu/                { [:HLSSU, text] }
+  /hmsu/                 { [:HMSU, text]  }
+  /sio/                  { [:SIO, text]   }
+  /opc/                  { [:OPC, text]   }
+  /dpc/                  { [:DPC, text]   }
+  /sls/                  { [:SLS, text]   }
+  /hsio/                 { [:HSIO, text]  }
+  /hopc/                 { [:HOPC, text]  }
+  /hdpc/                 { [:HDPC, text]  }
+  /hsls/                 { [:HSLS, text]  }
 
   /[ \r\n\t]/            { nil  }
   /[+*\/:\[\]!<>()&|=-]/ { text }
-  />=/                   { :GEQ }
-  /<=/                   { :LEQ }
-  /!=/                   { :NEQ }
+  />=/                   { [:GEQ, text] }
+  /<=/                   { [:LEQ, text] }
+  /!=/                   { [:NEQ, text] }
   /==/                   { '='  }
-  /<</                   { :LSH }
-  />>/                   { :RSH }
+  /<</                   { [:LSH, text] }
+  />>/                   { [:RSH, text] }
 
   /#{MAC}/               { [:EID, text]; } # { yyval.e = pcap_ether_aton(yytext); }
   /#{N}(\.#{N}){1,3}/    { [:HID, text] }
@@ -267,7 +262,7 @@ rule
 #                           }
   /#{V6}(?![:.\h])/      { [:HID6, text] }
   /#{B}:+(#{B}:+)+/      { raise "bogus ethernet address #{text}" }
-  /#{B}/                 { [:AID, text]; } # { yyval.e = pcap_ether_aton(yytext+1); }
+  /\$#{B}/               { [:AID, text.to_i] } # { yyval.e = pcap_ether_aton(yytext+1); }
   /#{N}/                 { [:NUM, text.to_i] }
   /icmptype/             { [:NUM,    0] } # { yylval.i = 0; return :NUM; }
   /icmpcode/             { [:NUM,    1] } # { yylval.i = 1; return :NUM; }

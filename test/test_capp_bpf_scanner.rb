@@ -47,7 +47,7 @@ class TestCappBPFScanner < Capp::TestCase
   end
 
   def test_next_token_number
-    assert_equal [:AID, '1'], scanner('1').next_token
+    assert_equal [:AID, 1], scanner('1').next_token
   end
 
   def test_next_token_whitespace
@@ -55,6 +55,15 @@ class TestCappBPFScanner < Capp::TestCase
     assert_nil scanner("\n").next_token
     assert_nil scanner("\r").next_token
     assert_nil scanner("\t").next_token
+  end
+
+  def test_parse
+    s = Capp::BPF::Scanner.new
+    s.yydebug = true
+
+    x = s.parse 'tcp port 80'
+
+    flunk
   end
 
   def scanner text

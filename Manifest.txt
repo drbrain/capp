@@ -8,6 +8,8 @@ ext/capp/capp.c
 ext/capp/extconf.rb
 ext/capp/structs.h
 lib/capp.rb
+lib/capp/bpf.ry
+lib/capp/bpf/scanner.rex
 lib/capp/packet.rb
 lib/capp/test_case.rb
 test/802.1X.pcap
@@ -17,6 +19,8 @@ test/icmp6.pcap
 test/tcp4.pcap
 test/tcp6.pcap
 test/test_capp.rb
+test/test_capp_bpf.rb
+test/test_capp_bpf_scanner.rb
 test/test_capp_packet.rb
 test/test_capp_packet_tcp_header.rb
 test/test_capp_root.rb

@@ -78,7 +78,7 @@ class BPF
   prechigh
 
   rule
-    prog : null expr { finish_parse(val[2].b); }
+    prog : null expr { val[2] }
          | null
          ;
 
@@ -99,7 +99,7 @@ class BPF
        ;
 
     id: nid
-     | pnum { result.b = gen_ncode(nil, val[1], result.q = val[0].q); }
+     | pnum { gen_ncode nil, val[1] }
      | paren pid ')' { result = val[2]; }
      ;
 
@@ -130,11 +130,8 @@ class BPF
             free(val[1]);
           }
         | AID {
-            result.b = gen_acode(val[1], result.q = val[0].q);
-            # val[1] was allocated by "pcap_ether_aton()",
-            # so we must free it now that we're done
-            # with it.
-            free(val[1]);
+            #result = gen_acode(val[1], result.q = val[0].q);
+            result = val[0]
           }
         | not id  { gen_not(val[2].b); result = val[2]; }
         ;
@@ -158,9 +155,9 @@ class BPF
          | not term { gen_not(val[2].b); result = val[2]; }
          ;
 
-    head : pqual dqual aqual { QSET(result.q, val[1], val[2], val[3]); }
-         | pqual dqual       { QSET(result.q, val[1], val[2], Q_DEFAULT); }
-         | pqual aqual       { QSET(result.q, val[1], Q_DEFAULT, val[2]); }
+    head : pqual dqual aqual { result = Qual.pda(*val) }
+         | pqual dqual       { result = Qual.pd(*val) }
+         | pqual aqual       { result = Qual.pa(*val) }
          | pqual PROTO       { QSET(result.q, val[1], Q_DEFAULT, Q_PROTO); }
          | pqual PROTOCHAIN  { QSET(result.q, val[1], Q_DEFAULT, Q_PROTOCHAIN); }
          | pqual ndaqual     { QSET(result.q, val[1], Q_DEFAULT, val[2]); }
@@ -506,21 +503,42 @@ end
 
 ---- inner
 
-    QERR = [nil, nil, nil, nil]
+  Qual = Struct.new :addr, :proto, :dir do
+    def self.pad(proto, dir, addr) new addr, proto, dir end
+    def self.pd(proto, dir)        new 0,    proto, dir end
+    def self.pa(proto, addr)       new addr, proto, 0   end
+  end
 
-    def next_token # :nodoc:
+  Q_DEFAULT = 0
+
+  # address qualifiers
+
+  Q_PORT = 3
+
+  # protocol qualifiers
+
+  Q_TCP = 6
+
+  QERR = [nil, nil, nil, nil]
+
+  attr_accessor :yydebug # :nodoc:
+
+  def initialize
+  end
+
+  def next_token # :nodoc:
+  end
+
+  # :stopdoc:
+
+  def gen_ncode s, v, qual = Qual.new
+    case qual.addr
+    when nil then
+
+    else
+      raise "unknown addr #{addr}"
     end
-
-    ##
-    # Parser +source+ and returns a parsed filter
-
-    def parse source
-      @source = source
-
-      do_parse
-    end
-
-# :stopdoc:
+  end
 
 ---- header
 class Capp
