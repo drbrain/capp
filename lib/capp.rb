@@ -145,7 +145,9 @@ class Capp
   # ::live for documentation on the additional arguments.
 
   def self.open device_or_file, *args
-    if IO === device_or_file or File.exist? device_or_file then
+    if Capp::Device === device_or_file then
+      device_or_file.open *args
+    elsif IO === device_or_file or File.exist? device_or_file then
       offline device_or_file, *args
     else
       live device_or_file, *args

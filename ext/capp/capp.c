@@ -92,6 +92,7 @@ static ID id_ipv4;
 static ID id_ipv6;
 static ID id_iv_datalink;
 static ID id_iv_device;
+static ID id_name;
 static ID id_recv;
 static ID id_type;
 static ID id_tcp;
@@ -281,7 +282,8 @@ capp_s_devices(VALUE klass)
  * Creates a Capp instance that will capture packets from a network device.
  *
  * +device+ is the device to capture packets from.  If the device is omitted
- * the default device (::default_device_name) is used.
+ * the default device (::default_device_name) is used.  The device may be
+ * either a device name or a Capp::Device.
  *
  * +capture_length+ is the number of bytes to capture from each packet.  If
  * a length is omitted 65535 is used.
@@ -316,6 +318,10 @@ capp_s_open_live(int argc, VALUE *argv, VALUE klass)
 	promisc = 1;
 
     *errbuf = '\0';
+
+    if (rb_respond_to(device, id_name)) {
+	device = rb_funcall(device, id_name, 0);
+    }
 
     handle = pcap_open_live(StringValueCStr(device), NUM2INT(snaplen),
 	    promisc, NUM2INT(timeout), errbuf);
@@ -1143,6 +1149,7 @@ Init_capp(void) {
     id_ipv6               = rb_intern("ipv6");
     id_iv_datalink        = rb_intern("@datalink");
     id_iv_device          = rb_intern("@device");
+    id_name               = rb_intern("name");
     id_recv               = rb_intern("recv");
     id_tcp                = rb_intern("tcp");
     id_type               = rb_intern("type");
