@@ -5,6 +5,10 @@ Enhancements:
 * You can now send a Capp::Device to Capp.open and Capp.live instead of a
   only a device name string.
 
+Bug fixes:
+
+* Capp.open works in offline mode with arguments now.
+
 === 1.0 / 2013-05-02
 
 Birthday!

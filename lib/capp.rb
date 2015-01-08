@@ -148,7 +148,7 @@ class Capp
     if Capp::Device === device_or_file then
       device_or_file.open *args
     elsif IO === device_or_file or File.exist? device_or_file then
-      offline device_or_file, *args
+      offline device_or_file
     else
       live device_or_file, *args
     end
