@@ -34,6 +34,7 @@ HOE = Hoe.spec 'capp' do
   dependency 'rake-compiler', '~> 0.8', :developer
   dependency 'racc',          '~> 1.4', :developer
   dependency 'oedipus_lex',   '~> 2.1', :developer
+  dependency 'minitest',      '~> 5.4', :developer
 end
 
 if Rake.const_defined? :ExtensionTask then
